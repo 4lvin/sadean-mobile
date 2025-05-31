@@ -1,0 +1,12 @@
+const String rootRoute = '/';
+const String loginRoute = '/login';
+const String mainRoute = '/main';
+const String dashboardRoute = '/dashboard';
+const String productsRoute = '/products';
+const String productsAddRoute = '/products/add';
+const String productsDetailRoute = '/products/detail';
+const String historyRoute = '/history';
+const String transactionIndexRoute = '/transaction/index';
+const String transactionDetailRoute = '/transaction/detail';
+const String transactionRoute = '/transaction';
+const String settingsRoute = '/settings';
