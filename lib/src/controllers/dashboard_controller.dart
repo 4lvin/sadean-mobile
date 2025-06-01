@@ -2,14 +2,23 @@ import 'package:get/get.dart';
 
 import '../models/category_model.dart';
 import '../models/product_model.dart';
+import '../models/transaction_model.dart';
+import '../service/category_service.dart';
+import '../service/product_service.dart';
+import '../service/transaction_service.dart';
 
 class DashboardController extends GetxController {
+  final TransactionService _transactionService = Get.find<TransactionService>();
+  final ProductService _productService = Get.find<ProductService>();
+  final CategoryService _categoryService = Get.find<CategoryService>();
+
   final RxInt transactionCount = 0.obs;
   final RxDouble totalRevenue = 0.0.obs;
   final RxDouble totalExpenses = 0.0.obs;
   final RxDouble totalProfit = 0.0.obs;
   final RxList<Product> topProducts = <Product>[].obs;
   final RxList<Category> topCategories = <Category>[].obs;
+  final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
@@ -17,74 +26,32 @@ class DashboardController extends GetxController {
     fetchDashboardData();
   }
 
-  void fetchDashboardData() {
-    // In a real app, this would come from a service or repository
-    // For now, let's set some sample data
-    transactionCount.value = 125;
-    totalRevenue.value = 5750000;
-    totalExpenses.value = 4200000;
-    totalProfit.value = totalRevenue.value - totalExpenses.value;
+  Future<void> fetchDashboardData() async {
+    isLoading.value = true;
 
-    // Populate top products
-    topProducts.value = [
-      Product(
-        id: '1',
-        name: 'Nasi Goreng',
-        categoryId: '1',
-        sku: 'NG001',
-        barcode: '8995678123456',
-        costPrice: 15000,
-        sellingPrice: 25000,
-        unit: 'porsi',
-        stock: 0,
-        minStock: 0,
-        soldCount: 48,
-      ),
-      Product(
-        id: '2',
-        name: 'Es Teh Manis',
-        categoryId: '2',
-        sku: 'ETM001',
-        barcode: '8995678123457',
-        costPrice: 3000,
-        sellingPrice: 8000,
-        unit: 'gelas',
-        stock: 0,
-        minStock: 0,
-        soldCount: 42,
-      ),
-      Product(
-        id: '3',
-        name: 'Ayam Goreng',
-        categoryId: '1',
-        sku: 'AG001',
-        barcode: '8995678123458',
-        costPrice: 12000,
-        sellingPrice: 20000,
-        unit: 'porsi',
-        stock: 0,
-        minStock: 0,
-        soldCount: 35,
-      ),
-    ];
+    try {
+      final stats = await _transactionService.getDashboardStats();
+      final products = await _productService.getAllProducts();
+      final categories = await _categoryService.getAllCategories();
 
-    // Populate top categories
-    topCategories.value = [
-      Category(
-        id: '1',
-        name: 'Makanan',
-        soldCount: 120,
-      ),
-      Category(
-        id: '2',
-        name: 'Minuman',
-        soldCount: 95,
-      ),
-      Category(
-        id: '3',
-        name: 'Snack',
-        soldCount: 60,
-      ),
-    ];
+      transactionCount.value = stats['transactionCount']!.toInt();
+      totalRevenue.value = stats['revenue']!;
+      totalExpenses.value = stats['cost']!;
+      totalProfit.value = stats['profit']!;
+
+      // Sort products by sold count and take top 3
+      products.sort((a, b) => b.soldCount.compareTo(a.soldCount));
+      topProducts.assignAll(products.take(3).toList());
+
+      // Sort categories by sold count and take top 3
+      categories.sort((a, b) => b.soldCount.compareTo(a.soldCount));
+      topCategories.assignAll(categories.take(3).toList());
+
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memuat data dashboard: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
+

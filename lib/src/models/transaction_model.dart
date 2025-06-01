@@ -41,7 +41,7 @@ class TransactionItem {
   final double unitPrice;
   final double costPrice;
 
-  TransactionItem({
+  TransactionItem ({
     required this.productId,
     required this.productName,
     required this.quantity,
@@ -64,4 +64,20 @@ class TransactionItem {
     unitPrice: json['unitPrice'],
     costPrice: json['costPrice'],
   );
+
+  TransactionItem copyWith({
+    String? productId,
+    String? productName,
+    int? quantity,
+    double? unitPrice,
+    double? costPrice,
+  }) {
+    return TransactionItem(
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      quantity: quantity ?? this.quantity,
+      unitPrice: unitPrice ?? this.unitPrice,
+      costPrice: costPrice ?? this.costPrice,
+    );
+  }
 }

@@ -9,6 +9,7 @@ import 'controllers/dashboard_controller.dart';
 import 'controllers/history_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/setting_controller.dart';
+import 'controllers/transaction_controller.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -54,6 +55,7 @@ class _MyAppState extends State<MyApp> {
             Get.put(ProductController());
             Get.put(HistoryController());
             Get.put(SettingsController());
+            Get.put(TransactionController()); // Tambahkan ini
           }),
         );
       },

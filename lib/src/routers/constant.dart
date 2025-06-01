@@ -8,5 +8,6 @@ const String productsDetailRoute = '/products/detail';
 const String historyRoute = '/history';
 const String transactionIndexRoute = '/transaction/index';
 const String transactionDetailRoute = '/transaction/detail';
+const String transactionDetailViewRoute = '/transaction/detailView';
 const String transactionRoute = '/transaction';
 const String settingsRoute = '/settings';

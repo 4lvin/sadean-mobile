@@ -1,15 +1,26 @@
-import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:sadean/src/controllers/transaction_controller.dart';
 
 import '../models/category_model.dart';
 import '../models/product_model.dart';
+import '../service/category_service.dart';
+import '../service/product_service.dart';
 
 class ProductController extends GetxController {
+  final ProductService _service = Get.find<ProductService>();
+  final TransactionController _transactionController = Get.put(TransactionController());
+  final CategoryService _categoryService = Get.find<CategoryService>();
+
   final RxList<Product> products = <Product>[].obs;
   final RxList<Category> categories = <Category>[].obs;
+  final RxBool isLoading = false.obs;
+  RxBool isGridView = true.obs;
 
-  // For product form
+  // Form controllers (keeping existing ones)
   final nameController = TextEditingController();
   final skuController = TextEditingController();
   final barcodeController = TextEditingController();
@@ -25,8 +36,7 @@ class ProductController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    fetchProducts();
-    fetchCategories();
+    loadData();
   }
 
   @override
@@ -42,55 +52,23 @@ class ProductController extends GetxController {
     super.onClose();
   }
 
-  void fetchProducts() {
-    // Sample products for demonstration
-    products.value = [
-      Product(
-        id: '1',
-        name: 'Nasi Goreng',
-        categoryId: '1',
-        sku: 'NG001',
-        barcode: '8995678123456',
-        costPrice: 15000,
-        sellingPrice: 25000,
-        unit: 'porsi',
-        stock: 20,
-        minStock: 5,
-      ),
-      Product(
-        id: '2',
-        name: 'Es Teh Manis',
-        categoryId: '2',
-        sku: 'ETM001',
-        barcode: '8995678123457',
-        costPrice: 3000,
-        sellingPrice: 8000,
-        unit: 'gelas',
-        stock: 50,
-        minStock: 10,
-      ),
-      Product(
-        id: '3',
-        name: 'Ayam Goreng',
-        categoryId: '1',
-        sku: 'AG001',
-        barcode: '8995678123458',
-        costPrice: 12000,
-        sellingPrice: 20000,
-        unit: 'porsi',
-        stock: 15,
-        minStock: 3,
-      ),
-    ];
-  }
+  Future<void> loadData() async {
+    isLoading.value = true;
 
-  void fetchCategories() {
-    // Sample categories for demonstration
-    categories.value = [
-      Category(id: '1', name: 'Makanan'),
-      Category(id: '2', name: 'Minuman'),
-      Category(id: '3', name: 'Snack'),
-    ];
+    try {
+      final [productList, categoryList] = await Future.wait([
+        _service.getAllProducts(),
+        _categoryService.getAllCategories(),
+      ]);
+
+      products.assignAll(productList as Iterable<Product>);
+      categories.assignAll(categoryList as Iterable<Category>);
+      _transactionController.loadInitialData();
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memuat data: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   void resetForm() {
@@ -108,54 +86,117 @@ class ProductController extends GetxController {
 
   Future<void> saveProduct() async {
     try {
-      if (nameController.text.isEmpty ||
-          selectedCategoryId.value == null ||
-          skuController.text.isEmpty ||
-          barcodeController.text.isEmpty ||
-          costPriceController.text.isEmpty ||
-          sellingPriceController.text.isEmpty ||
-          unitController.text.isEmpty ||
-          stockController.text.isEmpty ||
-          minStockController.text.isEmpty) {
-        Get.snackbar('Error', 'Please fill all required fields');
-        return;
-      }
+      if (!_validateForm()) return;
 
-      final newProduct = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: nameController.text,
+      isLoading.value = true;
+
+      await _service.addProduct(
+        name: nameController.text.trim(),
         categoryId: selectedCategoryId.value!,
-        sku: skuController.text,
-        barcode: barcodeController.text,
+        sku: skuController.text.trim(),
+        barcode: barcodeController.text.trim(),
         costPrice: double.parse(costPriceController.text),
         sellingPrice: double.parse(sellingPriceController.text),
-        unit: unitController.text,
+        unit: unitController.text.trim(),
         stock: int.parse(stockController.text),
         minStock: int.parse(minStockController.text),
-        // In a real app, you would upload the image and store its URL
-        imageUrl: selectedImage.value != null ? selectedImage.value!.path : null,
+        imageFile: selectedImage.value,
       );
 
-      // In a real app, save to database
-      products.add(newProduct);
+      await loadData();
       resetForm();
       Get.back();
-      Get.snackbar('Success', 'Product added successfully');
+      Get.snackbar('Sukses', 'Produk berhasil ditambahkan');
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save product: ${e.toString()}');
+      Get.snackbar('Error', e.toString());
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteProduct(String id) async {
+    try {
+      isLoading.value = true;
+      await _service.deleteProduct(id);
+      await loadData();
+      Get.back();
+      Get.snackbar('Sukses', 'Produk berhasil dihapus');
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal menghapus produk: $e');
+    } finally {
+      isLoading.value = false;
     }
   }
 
   Future<void> scanBarcode() async {
-    // In a real app, this would use a barcode scanner plugin
-    // For now, just simulate a scanned barcode
-    barcodeController.text = '8995678' + DateTime.now().second.toString().padLeft(6, '0');
+    // Implement barcode scanning
+    try {
+      // For demo, generate random barcode
+      barcodeController.text = '899567${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}';
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal scan barcode: $e');
+    }
   }
 
-  void selectImage() async {
-    // In a real app, this would use image_picker to get an image
-    // For now, we'll just simulate image selection
-    selectedImage.value = File('dummy_path');
-    Get.snackbar('Image Selected', 'Image successfully selected');
+  Future<void> selectImage() async {
+    try {
+      final picker = ImagePicker();
+      final source = await Get.dialog<ImageSource>(
+        AlertDialog(
+          title: const Text('Pilih Sumber Gambar'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Kamera'),
+                onTap: () => Get.back(result: ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galeri'),
+                onTap: () => Get.back(result: ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source != null) {
+        final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+        if (pickedFile != null) {
+          selectedImage.value = File(pickedFile.path);
+        }
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memilih gambar: $e');
+    }
+  }
+
+  bool _validateForm() {
+    if (nameController.text.trim().isEmpty ||
+        selectedCategoryId.value == null ||
+        // skuController.text.trim().isEmpty ||
+        barcodeController.text.trim().isEmpty ||
+        costPriceController.text.trim().isEmpty ||
+        sellingPriceController.text.trim().isEmpty ||
+        unitController.text.trim().isEmpty ||
+        stockController.text.trim().isEmpty ||
+        minStockController.text.trim().isEmpty) {
+      Get.snackbar('Error', 'Semua field wajib diisi');
+      return false;
+    }
+
+    try {
+      double.parse(costPriceController.text);
+      double.parse(sellingPriceController.text);
+      int.parse(stockController.text);
+      int.parse(minStockController.text);
+    } catch (e) {
+      Get.snackbar('Error', 'Format angka tidak valid');
+      return false;
+    }
+
+    return true;
   }
 }

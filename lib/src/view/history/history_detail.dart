@@ -2,237 +2,385 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
+import '../../config/theme.dart';
+import '../../controllers/transaction_controller.dart';
 import '../../models/transaction_model.dart';
 
 class TransactionDetailView extends StatelessWidget {
-  final Transaction transaction;
+  final TransactionController controller = Get.find<TransactionController>();
 
-  TransactionDetailView({required this.transaction});
+  TransactionDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Detail Transaksi'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.print),
-            onPressed: () {
-              // Print receipt functionality
-              Get.snackbar('Cetak', 'Mencetak struk transaksi');
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Transaction header
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'ID Transaksi',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          transaction.id,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Tanggal',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        Text(
-                          _formatDate(transaction.date),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 16),
-
-            // Items list
-            Text(
-              'Item',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: 8),
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: transaction.items.length,
-                separatorBuilder: (context, index) => Divider(),
-                itemBuilder: (context, index) {
-                  final item = transaction.items[index];
-                  return Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.productName,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                '${item.quantity} x Rp ${_formatPrice(item.unitPrice)}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          'Rp ${_formatPrice(item.quantity * item.unitPrice)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            SizedBox(height: 16),
-
-            // Summary
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    _buildSummaryRow('Subtotal', transaction.totalAmount),
-                    SizedBox(height: 8),
-                    _buildSummaryRow('Modal', transaction.costAmount, isHighlighted: false),
-                    SizedBox(height: 8),
-                    Divider(),
-                    SizedBox(height: 8),
-                    _buildSummaryRow('Laba', transaction.profit, color: Colors.blue[700]),
-                    SizedBox(height: 8),
-                    _buildSummaryRow('Total', transaction.totalAmount, isTotal: true),
-                  ],
-                ),
-              ),
-            ),
-
-            SizedBox(height: 24),
-
-            // Actions
-            Row(
+      body: Column(
+        children: [
+          // App Bar with back button
+          Container(
+            color: primaryColor.withOpacity(0.8),
+            padding: const EdgeInsets.only(top: 40, bottom: 16),
+            child: Column(
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Share functionality
-                      Get.snackbar('Bagikan', 'Membagikan detail transaksi');
-                    },
-                    icon: Icon(Icons.share),
-                    label: Text('Bagikan'),
-                    style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Rincian Transaksi',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.all(8),
+                        child: const Icon(
+                          Icons.receipt_outlined,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Print receipt functionality
-                      Get.snackbar('Cetak', 'Mencetak struk transaksi');
-                    },
-                    icon: Icon(Icons.print),
-                    label: Text('Cetak'),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
+
+                // Navigation tabs
+                Container(
+                  margin: const EdgeInsets.only(top: 16),
+                  height: 50,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTab('PRODUK', Icons.inventory_2_outlined, true),
+                      _buildTab('RINCIAN', Icons.receipt_long, false),
+                      _buildTab('PEMBAYARAN', Icons.payment, false),
+                    ],
                   ),
                 ),
               ],
             ),
+          ),
+
+          // Content
+          Expanded(
+            child: Obx(() => ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Order summary card
+                Container(
+                  decoration: BoxDecoration(
+                    color: secondaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 0,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Cart Items
+                      ...controller.cartItems.map((item) => _buildOrderItem(item)),
+
+                      if (controller.cartItems.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        const Divider(thickness: 1),
+                        const SizedBox(height: 16),
+                      ],
+
+                      // Subtotal
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Subtotal',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Profit
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Laba',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          Text(
+                            'Rp ${controller.formatPrice(controller.cartProfit.value)}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Total
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total Akhir',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          Text(
+                            'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Order options
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildOrderOption(Icons.local_shipping_outlined, 'Pengiriman'),
+                    _buildOrderOption(Icons.local_offer_outlined, 'Diskon'),
+                    _buildOrderOption(Icons.volunteer_activism_outlined, 'Layanan'),
+                    _buildOrderOption(Icons.account_balance_outlined, 'Pajak'),
+                  ],
+                ),
+              ],
+            )),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
           ],
+        ),
+        child: SafeArea(
+          child: Obx(() => ElevatedButton(
+            onPressed: controller.isProcessingTransaction.value
+                ? null
+                : () => controller.processTransaction(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: controller.isProcessingTransaction.value
+                ? const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                ),
+                SizedBox(width: 12),
+                Text('MEMPROSES...'),
+              ],
+            )
+                : const Text(
+              'BAYAR LUNAS',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+            ),
+          )),
         ),
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, double amount, {bool isHighlighted = true, Color? color, bool isTotal = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildOrderItem(TransactionItem item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.quantity} x Rp ${controller.formatPrice(item.unitPrice)}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'Rp ${controller.formatPrice(item.quantity * item.unitPrice)}',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String title, IconData icon, bool isActive) {
+    final backgroundColor = isActive
+        ? Colors.white
+        : Colors.white.withOpacity(0.2);
+    final textColor = isActive ? primaryColor : Colors.white;
+    final iconColor = isActive ? primaryColor : Colors.white;
+
+    return Expanded(
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          child: InkWell(
+            onTap: () {},
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, color: iconColor, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderOption(IconData icon, String label) {
+    return Column(
       children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.15),
+                spreadRadius: 0,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: () {
+                Get.snackbar('Info', '$label belum tersedia');
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Icon(
+                icon,
+                color: Colors.grey[600],
+                size: 26,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
         Text(
           label,
           style: TextStyle(
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-            fontSize: isTotal ? 16 : 14,
-          ),
-        ),
-        Text(
-          'Rp ${_formatPrice(amount)}',
-          style: TextStyle(
-            fontWeight: isTotal || isHighlighted ? FontWeight.bold : FontWeight.normal,
-            color: color,
-            fontSize: isTotal ? 18 : 14,
+            fontSize: 14,
+            color: Colors.grey[700],
           ),
         ),
       ],
     );
-  }
-
-  String _formatDate(DateTime date) {
-    return DateFormat('dd MMMM yyyy, HH:mm').format(date);
-  }
-
-  String _formatPrice(double price) {
-    return price.toStringAsFixed(0).replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
   }
 }

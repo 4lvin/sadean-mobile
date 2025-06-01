@@ -1,9 +1,13 @@
 import 'package:get/get.dart';
 
 import '../models/transaction_model.dart';
+import '../service/transaction_service.dart';
 
 class HistoryController extends GetxController {
+  final TransactionService _service = Get.find<TransactionService>();
+
   final RxList<Transaction> transactions = <Transaction>[].obs;
+  final RxBool isLoading = false.obs;
 
   @override
   void onInit() {
@@ -11,48 +15,29 @@ class HistoryController extends GetxController {
     fetchTransactions();
   }
 
-  void fetchTransactions() {
-    // Sample data for demonstration
-    transactions.value = [
-      Transaction(
-        id: 'TRX001',
-        date: DateTime.now().subtract(Duration(hours: 2)),
-        items: [
-          TransactionItem(
-            productId: '1',
-            productName: 'Nasi Goreng',
-            quantity: 2,
-            unitPrice: 25000,
-            costPrice: 15000,
-          ),
-          TransactionItem(
-            productId: '2',
-            productName: 'Es Teh Manis',
-            quantity: 2,
-            unitPrice: 8000,
-            costPrice: 3000,
-          ),
-        ],
-        totalAmount: 66000,
-        costAmount: 36000,
-        profit: 30000,
-      ),
-      Transaction(
-        id: 'TRX002',
-        date: DateTime.now().subtract(Duration(days: 1)),
-        items: [
-          TransactionItem(
-            productId: '3',
-            productName: 'Ayam Goreng',
-            quantity: 1,
-            unitPrice: 20000,
-            costPrice: 12000,
-          ),
-        ],
-        totalAmount: 20000,
-        costAmount: 12000,
-        profit: 8000,
-      ),
-    ];
+  Future<void> fetchTransactions() async {
+    isLoading.value = true;
+
+    try {
+      final transactionList = await _service.getAllTransactions();
+      transactions.assignAll(transactionList);
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memuat riwayat transaksi: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteTransaction(String id) async {
+    try {
+      isLoading.value = true;
+      await _service.deleteTransaction(id);
+      await fetchTransactions();
+      Get.snackbar('Sukses', 'Transaksi berhasil dihapus');
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal menghapus transaksi: $e');
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

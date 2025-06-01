@@ -9,23 +9,29 @@ class AddProductView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Tambah Produk'),
+        title: const Text('Tambah Produk'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.save),
-            onPressed: () => controller.saveProduct(),
-          ),
+          Obx(() => IconButton(
+            icon: controller.isLoading.value
+                ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+                : const Icon(Icons.save),
+            onPressed: controller.isLoading.value ? null : () => controller.saveProduct(),
+          )),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+      body: Obx(() => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image
             Center(
-              child: Obx(() => GestureDetector(
-                onTap: () => controller.selectImage(),
+              child: GestureDetector(
+                onTap: controller.isLoading.value ? null : () => controller.selectImage(),
                 child: Container(
                   width: 150,
                   height: 150,
@@ -33,48 +39,49 @@ class AddProductView extends StatelessWidget {
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[300]!),
-                    image: controller.selectedImage.value != null
-                        ? DecorationImage(
-                      image: FileImage(controller.selectedImage.value!),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: controller.selectedImage.value != null
+                        ? Image.file(
+                      controller.selectedImage.value!,
                       fit: BoxFit.cover,
                     )
-                        : null,
+                        : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_a_photo, size: 40, color: Colors.grey[400]),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Tambah Gambar',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: controller.selectedImage.value == null
-                      ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_a_photo, size: 40, color: Colors.grey[400]),
-                      SizedBox(height: 8),
-                      Text(
-                        'Tambah Gambar',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  )
-                      : null,
                 ),
-              )),
+              ),
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Product Name
             TextFormField(
               controller: controller.nameController,
-              decoration: InputDecoration(
+              enabled: !controller.isLoading.value,
+              decoration: const InputDecoration(
                 labelText: 'Nama Produk*',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.shopping_bag),
               ),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Category Dropdown
-            Obx(() => DropdownButtonFormField<String>(
+            Obx(()=>DropdownButtonFormField<String>(
               value: controller.selectedCategoryId.value,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Kategori*',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.category),
@@ -85,25 +92,29 @@ class AddProductView extends StatelessWidget {
                   child: Text(category.name),
                 );
               }).toList(),
-              onChanged: (value) {
+              onChanged: controller.isLoading.value
+                  ? null
+                  : (value) {
                 controller.selectedCategoryId.value = value;
               },
-              hint: Text('Pilih Kategori'),
+              hint: const Text('Pilih Kategori'),
             )),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // SKU
             TextFormField(
               controller: controller.skuController,
-              decoration: InputDecoration(
+              enabled: !controller.isLoading.value,
+              decoration: const InputDecoration(
                 labelText: 'SKU*',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.qr_code),
+                hintText: 'Kode unik produk',
               ),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Barcode with Scan button
             Row(
@@ -111,26 +122,27 @@ class AddProductView extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.barcodeController,
-                    decoration: InputDecoration(
+                    enabled: !controller.isLoading.value,
+                    decoration: const InputDecoration(
                       labelText: 'Barcode*',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.qr_code_scanner),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: () => controller.scanBarcode(),
-                  icon: Icon(Icons.qr_code_scanner),
-                  label: Text('Scan'),
+                  onPressed: controller.isLoading.value ? null : () => controller.scanBarcode(),
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan'),
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(100, 56),
+                    minimumSize: const Size(100, 56),
                   ),
                 ),
               ],
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Price Group
             Row(
@@ -138,7 +150,8 @@ class AddProductView extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.costPriceController,
-                    decoration: InputDecoration(
+                    enabled: !controller.isLoading.value,
+                    decoration: const InputDecoration(
                       labelText: 'Harga Modal*',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.money),
@@ -147,11 +160,12 @@ class AddProductView extends StatelessWidget {
                     keyboardType: TextInputType.number,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: controller.sellingPriceController,
-                    decoration: InputDecoration(
+                    enabled: !controller.isLoading.value,
+                    decoration: const InputDecoration(
                       labelText: 'Harga Jual*',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.attach_money),
@@ -163,12 +177,13 @@ class AddProductView extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Unit
             TextFormField(
               controller: controller.unitController,
-              decoration: InputDecoration(
+              enabled: !controller.isLoading.value,
+              decoration: const InputDecoration(
                 labelText: 'Satuan*',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.straighten),
@@ -176,7 +191,7 @@ class AddProductView extends StatelessWidget {
               ),
             ),
 
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // Stock Group
             Row(
@@ -184,7 +199,8 @@ class AddProductView extends StatelessWidget {
                 Expanded(
                   child: TextFormField(
                     controller: controller.stockController,
-                    decoration: InputDecoration(
+                    enabled: !controller.isLoading.value,
+                    decoration: const InputDecoration(
                       labelText: 'Stok*',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.inventory),
@@ -192,11 +208,12 @@ class AddProductView extends StatelessWidget {
                     keyboardType: TextInputType.number,
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: controller.minStockController,
-                    decoration: InputDecoration(
+                    enabled: !controller.isLoading.value,
+                    decoration: const InputDecoration(
                       labelText: 'Stok Minimum*',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.warning),
@@ -207,15 +224,17 @@ class AddProductView extends StatelessWidget {
               ],
             ),
 
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Submit Button
             SizedBox(
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () => controller.saveProduct(),
-                child: Text(
+                onPressed: controller.isLoading.value ? null : () => controller.saveProduct(),
+                child: controller.isLoading.value
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
                   'Simpan Produk',
                   style: TextStyle(fontSize: 16),
                 ),
@@ -223,7 +242,7 @@ class AddProductView extends StatelessWidget {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 }

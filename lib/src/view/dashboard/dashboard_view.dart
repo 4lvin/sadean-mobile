@@ -12,18 +12,24 @@ class DashboardView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard'),
+        title: const Text('Dashboard'),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () => controller.fetchDashboardData(),
-          ),
+          Obx(() => IconButton(
+            icon: controller.isLoading.value
+                ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+                : const Icon(Icons.refresh),
+            onPressed: controller.isLoading.value ? null : () => controller.fetchDashboardData(),
+          )),
         ],
       ),
       body: Obx(() => RefreshIndicator(
-        onRefresh: () async => controller.fetchDashboardData(),
+        onRefresh: () => controller.fetchDashboardData(),
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -33,7 +39,7 @@ class DashboardView extends StatelessWidget {
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 children: [
                   SummaryCard(
                     title: 'Total Transaksi',
@@ -62,20 +68,32 @@ class DashboardView extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Top products section
-              Text(
+              const Text(
                 'Produk Terlaku',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 12),
-              ListView.builder(
+              const SizedBox(height: 12),
+              controller.topProducts.isEmpty
+                  ? Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      'Belum ada data penjualan',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
+              )
+                  : ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: controller.topProducts.length,
                 itemBuilder: (context, index) {
                   final product = controller.topProducts[index];
@@ -87,20 +105,32 @@ class DashboardView extends StatelessWidget {
                 },
               ),
 
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
 
               // Top categories section
-              Text(
+              const Text(
                 'Kategori Terlaku',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              SizedBox(height: 12),
-              ListView.builder(
+              const SizedBox(height: 12),
+              controller.topCategories.isEmpty
+                  ? Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      'Belum ada data kategori',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
+              )
+                  : ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: controller.topCategories.length,
                 itemBuilder: (context, index) {
                   final category = controller.topCategories[index];
@@ -111,6 +141,47 @@ class DashboardView extends StatelessWidget {
                   );
                 },
               ),
+
+              const SizedBox(height: 16),
+
+              // Quick actions
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Aksi Cepat',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => Get.toNamed('/transaction'),
+                              icon: const Icon(Icons.add_shopping_cart),
+                              label: const Text('Transaksi Baru'),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () => Get.toNamed('/products/add'),
+                              icon: const Icon(Icons.add_box),
+                              label: const Text('Tambah Produk'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -119,7 +190,6 @@ class DashboardView extends StatelessWidget {
   }
 
   String formatCurrency(double value) {
-    // Format as thousand separator
     return value.toStringAsFixed(0).replaceAllMapped(
         RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
   }

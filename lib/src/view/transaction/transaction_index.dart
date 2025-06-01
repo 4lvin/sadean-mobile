@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:sadean/src/config/assets.dart';
+import 'package:sadean/src/view/transaction/transaction_view.dart';
 
 import '../../config/theme.dart';
+import '../../controllers/history_controller.dart';
+import '../../controllers/transaction_controller.dart';
+import '../../models/transaction_model.dart';
 import '../../routers/constant.dart';
 
 class TransactionIndex extends StatelessWidget {
-  TransactionIndex({super.key});
+  final TransactionController controller = Get.put(TransactionController());
 
-  int _selectedIndex = 0;
-  final currencyFormat = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: '\$',
-    decimalDigits: 2,
-  );
+  TransactionIndex({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +28,7 @@ class TransactionIndex extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
               child: Row(
                 children: [
-                  Image.asset(logoSamping,scale: 5,),
+                  Image.asset(logoSamping, scale: 5),
                   const Spacer(),
                   Container(
                     decoration: BoxDecoration(
@@ -65,10 +64,9 @@ class TransactionIndex extends StatelessWidget {
                         child: _buildActionCard(
                           icon: Icons.description,
                           title: 'Pengeluaran',
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.secondary.withOpacity(0.9),
+                          color: secondaryColor.withOpacity(0.9),
                           textColor: Colors.white,
+                          onTap: () => Get.snackbar('Info', 'Fitur pengeluaran akan segera hadir'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -76,10 +74,9 @@ class TransactionIndex extends StatelessWidget {
                         child: _buildActionCard(
                           icon: Icons.attach_money,
                           title: 'Pendapatan',
-                          color: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.9),
+                          color: primaryColor.withOpacity(0.9),
                           textColor: Colors.white,
+                          onTap: () => Get.toNamed('/history'),
                         ),
                       ),
                     ],
@@ -90,32 +87,78 @@ class TransactionIndex extends StatelessWidget {
               ),
             ),
 
-            // Active Cart Section
-            Padding(
+            // Cart Statistics
+            Obx(() => controller.cartItems.isNotEmpty
+                ? Padding(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
-              child: Text(
-                'KERANJANG AKTIF',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[700],
-                  letterSpacing: 1.2,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'KERANJANG AKTIF',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[700],
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          Icon(Icons.shopping_cart, color: primaryColor),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${controller.cartItemCount.value} item dalam keranjang',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Total: Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                                  style: TextStyle(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Get.to(() => TransactionView()),
+                            child: const Text('Lanjut'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            )
+                : const SizedBox.shrink()),
 
-            // Carts
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                height: 160,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+            // Recent Transactions
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCartCard(0, 0.0),
-                    _buildCartCard(1, 15000.0),
-                    _buildCartCard(1, 15000.0),
-                    _buildCartCard(1, 15000.0),
+                    Text(
+                      'TRANSAKSI TERBARU',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[700],
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: _buildRecentTransactions(),
+                    ),
                   ],
                 ),
               ),
@@ -125,11 +168,13 @@ class TransactionIndex extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildActionCard({
     required IconData icon,
     required String title,
     required Color color,
     required Color textColor,
+    required VoidCallback onTap,
   }) {
     return Container(
       height: 90,
@@ -149,7 +194,7 @@ class TransactionIndex extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {},
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -189,9 +234,7 @@ class TransactionIndex extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Get.toNamed(transactionRoute);
-          },
+          onTap: () => Get.to(() => TransactionView()),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(
@@ -233,59 +276,117 @@ class TransactionIndex extends StatelessWidget {
     );
   }
 
-  Widget _buildCartCard(int itemCount, double total) {
+  Widget _buildRecentTransactions() {
+    final historyController = Get.find<HistoryController>();
+
+    return Obx(() {
+      if (historyController.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (historyController.transactions.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.receipt_long, size: 60, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Belum ada transaksi',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        );
+      }
+
+      // Show only recent 5 transactions
+      final recentTransactions = historyController.transactions.take(5).toList();
+
+      return ListView.builder(
+        itemCount: recentTransactions.length,
+        itemBuilder: (context, index) {
+          final transaction = recentTransactions[index];
+          return _buildTransactionCard(transaction);
+        },
+      );
+    });
+  }
+
+  Widget _buildTransactionCard(Transaction transaction) {
     final now = DateTime.now();
-    final formattedDate = '${now.day} Apr, ${now.hour}.${now.minute}';
+    final transactionDate = transaction.date;
+    final formattedDate = DateFormat('dd MMM, HH:mm').format(transactionDate);
 
     return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
+            color: Colors.grey.withOpacity(0.1),
             spreadRadius: 0,
-            blurRadius: 8,
+            blurRadius: 5,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {},
+          borderRadius: BorderRadius.circular(12),
+          // onTap: () => Get.to(() => TransactionDetailHistoryView(transaction: transaction)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      transaction.id,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
-                const Spacer(),
+                const SizedBox(height: 8),
                 Text(
-                  '$itemCount barang',
+                  '${transaction.items.length} item',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  currencyFormat.format(total),
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Total',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    Text(
+                      'Rp ${controller.formatPrice(transaction.totalAmount)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

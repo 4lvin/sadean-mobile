@@ -2,7 +2,7 @@ class Product {
   final String id;
   final String name;
   final String categoryId;
-  final String? imageUrl;
+  final String? imageUrl; // Now stores Base64 string
   final String sku;
   final String barcode;
   final double costPrice;
@@ -49,8 +49,8 @@ class Product {
     imageUrl: json['imageUrl'],
     sku: json['sku'],
     barcode: json['barcode'],
-    costPrice: json['costPrice'],
-    sellingPrice: json['sellingPrice'],
+    costPrice: json['costPrice'].toDouble(),
+    sellingPrice: json['sellingPrice'].toDouble(),
     unit: json['unit'],
     stock: json['stock'],
     minStock: json['minStock'],

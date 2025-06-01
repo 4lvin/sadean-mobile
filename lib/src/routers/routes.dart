@@ -4,6 +4,7 @@ import 'package:sadean/src/view/product/detail_product.dart';
 import 'package:sadean/src/view/transaction/transaction_detail.dart';
 import 'package:sadean/src/view/transaction/transaction_index.dart';
 import 'package:sadean/src/view/transaction/transaction_view.dart';
+import '../view/history/history_detail.dart';
 import '../view/login/login.dart';
 import '../view/main_page.dart';
 import '../view/splash_Screen.dart';
@@ -35,7 +36,7 @@ final List<GetPage<dynamic>> routes = [
     page: () => TransactionIndex(),
   ),
   GetPage(
-    name: transactionDetailRoute,
-    page: () => TransactionDetail(),
+    name: transactionDetailViewRoute,
+    page: () => TransactionDetailView(),
   ),
 ];
