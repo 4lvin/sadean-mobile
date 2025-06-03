@@ -1,0 +1,202 @@
+import 'dart:io';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
+
+class DatabaseHelper {
+  static const _databaseName = "sadean_pos.db";
+  static const _databaseVersion = 1;
+
+  // Table names
+  static const String tableCategories = 'categories';
+  static const String tableProducts = 'products';
+  static const String tableTransactions = 'transactions';
+  static const String tableTransactionItems = 'transaction_items';
+
+  // Singleton pattern
+  DatabaseHelper._privateConstructor();
+  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
+
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    String path = join(documentsDirectory.path, _databaseName);
+    return await openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
+    );
+  }
+
+  Future<void> _onCreate(Database db, int version) async {
+    // Categories table
+    await db.execute('''
+      CREATE TABLE $tableCategories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        product_count INTEGER DEFAULT 0,
+        sold_count INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // Products table
+    await db.execute('''
+      CREATE TABLE $tableProducts (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        category_id TEXT NOT NULL,
+        image_url TEXT,
+        sku TEXT UNIQUE NOT NULL,
+        barcode TEXT UNIQUE NOT NULL,
+        cost_price REAL NOT NULL,
+        selling_price REAL NOT NULL,
+        unit TEXT NOT NULL,
+        stock INTEGER NOT NULL,
+        min_stock INTEGER NOT NULL,
+        sold_count INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (category_id) REFERENCES $tableCategories (id) ON DELETE RESTRICT
+      )
+    ''');
+
+    // Transactions table
+    await db.execute('''
+      CREATE TABLE $tableTransactions (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        total_amount REAL NOT NULL,
+        cost_amount REAL NOT NULL,
+        profit REAL NOT NULL,
+        subtotal REAL DEFAULT 0,
+        discount REAL DEFAULT 0,
+        tax REAL DEFAULT 0,
+        shipping_cost REAL DEFAULT 0,
+        service_fee REAL DEFAULT 0,
+        customer_name TEXT,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // Transaction items table
+    await db.execute('''
+      CREATE TABLE $tableTransactionItems (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_id TEXT NOT NULL,
+        product_id TEXT NOT NULL,
+        product_name TEXT NOT NULL,
+        quantity INTEGER NOT NULL,
+        unit_price REAL NOT NULL,
+        cost_price REAL NOT NULL,
+        FOREIGN KEY (transaction_id) REFERENCES $tableTransactions (id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES $tableProducts (id) ON DELETE RESTRICT
+      )
+    ''');
+
+    // Create indexes for better performance
+    await db.execute('CREATE INDEX idx_products_category_id ON $tableProducts (category_id)');
+    await db.execute('CREATE INDEX idx_products_barcode ON $tableProducts (barcode)');
+    await db.execute('CREATE INDEX idx_products_sku ON $tableProducts (sku)');
+    await db.execute('CREATE INDEX idx_transaction_items_transaction_id ON $tableTransactionItems (transaction_id)');
+    await db.execute('CREATE INDEX idx_transaction_items_product_id ON $tableTransactionItems (product_id)');
+    await db.execute('CREATE INDEX idx_transactions_date ON $tableTransactions (date)');
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Handle database schema migrations here
+    if (oldVersion < 2) {
+      // Example: Add new column in version 2
+      // await db.execute('ALTER TABLE $tableProducts ADD COLUMN new_column TEXT');
+    }
+  }
+
+  // Generic CRUD operations
+  Future<int> insert(String table, Map<String, dynamic> data) async {
+    final db = await database;
+    data['created_at'] = DateTime.now().toIso8601String();
+    data['updated_at'] = DateTime.now().toIso8601String();
+    return await db.insert(table, data);
+  }
+
+  Future<int> insertTrx(DatabaseExecutor db, String table, Map<String, dynamic> data) async {
+    data['created_at'] = DateTime.now().toIso8601String();
+    data['updated_at'] = DateTime.now().toIso8601String();
+    return await db.insert(table, data);
+  }
+
+  Future<int> update(String table, Map<String, dynamic> data, String whereClause, List<dynamic> whereArgs) async {
+    final db = await database;
+    data['updated_at'] = DateTime.now().toIso8601String();
+    return await db.update(table, data, where: whereClause, whereArgs: whereArgs);
+  }
+
+  Future<int> delete(String table, String whereClause, List<dynamic> whereArgs) async {
+    final db = await database;
+    return await db.delete(table, where: whereClause, whereArgs: whereArgs);
+  }
+
+  Future<List<Map<String, dynamic>>> query(
+      String table, {
+        List<String>? columns,
+        String? where,
+        List<dynamic>? whereArgs,
+        String? orderBy,
+        int? limit,
+      }) async {
+    final db = await database;
+    return await db.query(
+      table,
+      columns: columns,
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: orderBy,
+      limit: limit,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> rawQuery(String sql, [List<dynamic>? arguments]) async {
+    final db = await database;
+    return await db.rawQuery(sql, arguments);
+  }
+
+  // Transaction operations
+  Future<T> transaction<T>(Future<T> Function(Transaction txn) action) async {
+    final db = await database;
+    return await db.transaction(action);
+  }
+
+  // Close database
+  Future<void> close() async {
+    final db = await database;
+    await db.close();
+  }
+
+  // Clear all data (for testing/reset)
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete(tableTransactionItems);
+      await txn.delete(tableTransactions);
+      await txn.delete(tableProducts);
+      await txn.delete(tableCategories);
+    });
+  }
+
+  // Get database path (for debugging)
+  Future<String> getDatabasePath() async {
+    Directory documentsDirectory = await getApplicationDocumentsDirectory();
+    return join(documentsDirectory.path, _databaseName);
+  }
+}

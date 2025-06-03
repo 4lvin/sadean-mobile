@@ -5,11 +5,13 @@ import '../../controllers/history_controller.dart';
 import 'package:intl/intl.dart';
 
 import '../../models/transaction_model.dart';
+import '../../service/thermal_print_service.dart';
 import '../../service/transaction_service.dart';
 import '../transaction/transaction_detail.dart';
 
 class HistoryView extends StatelessWidget {
   final HistoryController controller = Get.find<HistoryController>();
+  final BluetoothPrintService _printService = BluetoothPrintService();
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +23,22 @@ class HistoryView extends StatelessWidget {
             icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterOptions(),
           ),
-          Obx(() => IconButton(
-            icon: controller.isLoading.value
-                ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-                : const Icon(Icons.refresh),
-            onPressed: controller.isLoading.value ? null : () => controller.fetchTransactions(),
-          )),
+          Obx(
+            () => IconButton(
+              icon:
+                  controller.isLoading.value
+                      ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                      : const Icon(Icons.refresh),
+              onPressed:
+                  controller.isLoading.value
+                      ? null
+                      : () => controller.fetchTransactions(),
+            ),
+          ),
         ],
       ),
       body: Obx(() {
@@ -43,18 +51,11 @@ class HistoryView extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.receipt_long,
-                  size: 80,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.receipt_long, size: 80, color: Colors.grey[400]),
                 const SizedBox(height: 16),
                 Text(
                   'Belum ada transaksi',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
@@ -101,43 +102,58 @@ class HistoryView extends StatelessWidget {
                               children: [
                                 Text(
                                   _formatDate(transaction.date),
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                  ),
+                                  style: TextStyle(color: Colors.grey[600]),
                                 ),
                                 PopupMenuButton(
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem(
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.visibility, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Detail'),
-                                        ],
-                                      ),
-                                      onTap: () => _showTransactionDetail(transaction),
-                                    ),
-                                    PopupMenuItem(
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.print, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Cetak'),
-                                        ],
-                                      ),
-                                      onTap: () => _printTransaction(transaction),
-                                    ),
-                                    PopupMenuItem(
-                                      child: const Row(
-                                        children: [
-                                          Icon(Icons.delete, size: 20, color: Colors.red),
-                                          SizedBox(width: 8),
-                                          Text('Hapus', style: TextStyle(color: Colors.red)),
-                                        ],
-                                      ),
-                                      onTap: () => _confirmDelete(transaction),
-                                    ),
-                                  ],
+                                  itemBuilder:
+                                      (context) => [
+                                        PopupMenuItem(
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.visibility, size: 20),
+                                              SizedBox(width: 8),
+                                              Text('Detail'),
+                                            ],
+                                          ),
+                                          onTap:
+                                              () => _showTransactionDetail(
+                                                transaction,
+                                              ),
+                                        ),
+                                        PopupMenuItem(
+                                          child: const Row(
+                                            children: [
+                                              Icon(Icons.print, size: 20),
+                                              SizedBox(width: 8),
+                                              Text('Cetak'),
+                                            ],
+                                          ),
+                                          onTap:
+                                              () => _printTransaction(
+                                                transaction,
+                                              ),
+                                        ),
+                                        PopupMenuItem(
+                                          child: const Row(
+                                            children: [
+                                              Icon(
+                                                Icons.delete,
+                                                size: 20,
+                                                color: Colors.red,
+                                              ),
+                                              SizedBox(width: 8),
+                                              Text(
+                                                'Hapus',
+                                                style: TextStyle(
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          onTap:
+                                              () => _confirmDelete(transaction),
+                                        ),
+                                      ],
                                 ),
                               ],
                             ),
@@ -154,18 +170,14 @@ class HistoryView extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               '${transaction.items.length} item',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                              ),
+                              style: TextStyle(color: Colors.grey[600]),
                             ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _getItemsSummary(transaction),
-                          style: TextStyle(
-                            color: Colors.grey[800],
-                          ),
+                          style: TextStyle(color: Colors.grey[800]),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -175,9 +187,7 @@ class HistoryView extends StatelessWidget {
                           children: [
                             const Text(
                               'Total',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                             Text(
                               'Rp ${_formatPrice(transaction.totalAmount)}',
@@ -195,9 +205,7 @@ class HistoryView extends StatelessWidget {
                           children: [
                             const Text(
                               'Laba',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w500,
-                              ),
+                              style: TextStyle(fontWeight: FontWeight.w500),
                             ),
                             Text(
                               'Rp ${_formatPrice(transaction.profit)}',
@@ -217,16 +225,11 @@ class HistoryView extends StatelessWidget {
           ),
         );
       }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Get.toNamed('/transaction'),
-        child: const Icon(Icons.add),
-        tooltip: 'Transaksi Baru',
-      ),
     );
   }
 
   void _showTransactionDetail(Transaction transaction) {
-    Get.to(() => TransactionDetail(transaction: transaction,));
+    Get.to(() => TransactionDetail(transaction: transaction));
   }
 
   void _showFilterOptions() {
@@ -243,10 +246,7 @@ class HistoryView extends StatelessWidget {
           children: [
             const Text(
               'Filter Transaksi',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             ListTile(
@@ -288,14 +288,43 @@ class HistoryView extends StatelessWidget {
     controller.fetchTransactions();
   }
 
-  void _printTransaction(Transaction transaction) {
-    Get.snackbar('Info', 'Mencetak struk transaksi ${transaction.id}');
+  void _printTransaction(Transaction transaction) async {
+    if (_printService.devices.isEmpty) {
+      await _printService.startScan();
+    }
+
+    if (_printService.devices.isNotEmpty) {
+      _printService.selectDevice(_printService.devices.first);
+
+      List<String> items = transaction.items
+          .map((e) => '${e.productName} x${e.quantity}    Rp${e.costPrice}')
+          .toList();
+
+      try {
+        await _printService.printTransaction(
+          title: 'Struk Transaksi ${transaction.id}',
+          items: items,
+          total: 'Rp ${transaction.totalAmount.toStringAsFixed(0)}',
+          footer: 'Terima Kasih!',
+        );
+
+        Get.snackbar(
+          'Info',
+          'Struk transaksi ${transaction.id} berhasil dicetak',
+        );
+      } catch (e) {
+        Get.snackbar('Error', e.toString());
+      }
+    } else {
+      Get.snackbar('Error', 'Tidak ditemukan printer Bluetooth');
+    }
   }
 
   void _confirmDelete(Transaction transaction) {
     Get.defaultDialog(
       title: 'Konfirmasi Hapus',
-      middleText: 'Hapus transaksi ${transaction.id}?\nStok produk akan dikembalikan.',
+      middleText:
+          'Hapus transaksi ${transaction.id}?\nStok produk akan dikembalikan.',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
@@ -316,7 +345,11 @@ class HistoryView extends StatelessWidget {
   }
 
   String _formatPrice(double price) {
-    return price.toStringAsFixed(0).replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.');
+    return price
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:sadean/src/view/product/add_product.dart';
 import 'package:sadean/src/view/product/detail_product.dart';
+import 'package:sadean/src/view/setting/contact.dart';
+import 'package:sadean/src/view/setting/faq.dart';
+import 'package:sadean/src/view/setting/privacy.dart';
 import 'package:sadean/src/view/transaction/transaction_detail.dart';
 import 'package:sadean/src/view/transaction/transaction_index.dart';
 import 'package:sadean/src/view/transaction/transaction_view.dart';
@@ -38,5 +41,17 @@ final List<GetPage<dynamic>> routes = [
   GetPage(
     name: transactionDetailViewRoute,
     page: () => TransactionDetailView(),
+  ),
+  GetPage(
+    name: faqRoute,
+    page: () => FAQPage(),
+  ),
+  GetPage(
+    name: privasiRoute,
+    page: () => PrivacyPolicyPage(),
+  ),
+  GetPage(
+    name: contactRoute,
+    page: () => ContactUsPage(),
   ),
 ];

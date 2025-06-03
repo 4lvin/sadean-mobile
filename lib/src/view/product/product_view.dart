@@ -107,7 +107,7 @@ class ProductsView extends StatelessWidget {
   }
 
   Widget _buildProductCard(product, {bool isGrid = true}) {
-    final storage = Get.find<SecureStorageService>();
+    final storage = Get.find<ProductService>();
     final imageWidget = product.imageUrl != null
         ? Hero(
       tag: 'product-hero-${product.id}', // pastikan unik

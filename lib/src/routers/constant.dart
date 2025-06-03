@@ -11,3 +11,6 @@ const String transactionDetailRoute = '/transaction/detail';
 const String transactionDetailViewRoute = '/transaction/detailView';
 const String transactionRoute = '/transaction';
 const String settingsRoute = '/settings';
+const String faqRoute = '/faq';
+const String privasiRoute = '/privasi';
+const String contactRoute = '/contact';

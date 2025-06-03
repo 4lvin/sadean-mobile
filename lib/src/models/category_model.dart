@@ -14,14 +14,14 @@ class Category {
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'productCount': productCount,
-    'soldCount': soldCount,
+    'product_count': productCount,
+    'sold_count': soldCount,
   };
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
     id: json['id'],
     name: json['name'],
-    productCount: json['productCount'] ?? 0,
-    soldCount: json['soldCount'] ?? 0,
+    productCount: json['product_count'] ?? 0,
+    soldCount: json['sold_count'] ?? 0,
   );
 }

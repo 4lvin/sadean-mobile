@@ -17,9 +17,18 @@ class TransactionController extends GetxController {
 
   // Cart Management
   final RxList<TransactionItem> cartItems = <TransactionItem>[].obs;
+  final RxDouble cartSubtotal = 0.0.obs;
   final RxDouble cartTotal = 0.0.obs;
   final RxDouble cartProfit = 0.0.obs;
   final RxInt cartItemCount = 0.obs;
+
+  // Transaction Adjustments
+  final RxDouble shippingCost = 0.0.obs;
+  final RxDouble discount = 0.0.obs;
+  final RxDouble serviceFee = 0.0.obs;
+  final RxDouble tax = 0.0.obs;
+  final RxString discountType = 'amount'.obs; // 'amount' or 'percentage'
+  final RxString taxType = 'amount'.obs; // 'amount' or 'percentage'
 
   // Product Management
   final RxList<Product> products = <Product>[].obs;
@@ -46,6 +55,12 @@ class TransactionController extends GetxController {
 
     // Listen to cart changes to update totals
     ever(cartItems, _updateCartTotals);
+    ever(shippingCost, (_) => _updateCartTotals(cartItems));
+    ever(discount, (_) => _updateCartTotals(cartItems));
+    ever(serviceFee, (_) => _updateCartTotals(cartItems));
+    ever(tax, (_) => _updateCartTotals(cartItems));
+    ever(discountType, (_) => _updateCartTotals(cartItems));
+    ever(taxType, (_) => _updateCartTotals(cartItems));
   }
 
   @override
@@ -225,11 +240,32 @@ class TransactionController extends GetxController {
   }
 
   void _updateCartTotals(List<TransactionItem> items) {
-    final total = items.fold<double>(0, (sum, item) => sum + (item.quantity * item.unitPrice));
-    final profit = items.fold<double>(0, (sum, item) =>
-    sum + (item.quantity * (item.unitPrice - item.costPrice)));
+    final subtotal = items.fold<double>(0, (sum, item) => sum + (item.quantity * item.unitPrice));
+
+    // Calculate discount
+    double discountAmount = 0;
+    if (discountType.value == 'percentage') {
+      discountAmount = subtotal * (discount.value / 100);
+    } else {
+      discountAmount = discount.value;
+    }
+
+    // Calculate tax
+    double taxAmount = 0;
+    final taxableAmount = subtotal - discountAmount + serviceFee.value + shippingCost.value;
+    if (taxType.value == 'percentage') {
+      taxAmount = taxableAmount * (tax.value / 100);
+    } else {
+      taxAmount = tax.value;
+    }
+
+    final total = subtotal - discountAmount + serviceFee.value + shippingCost.value + taxAmount;
+
+    final costAmount = items.fold<double>(0, (sum, item) => sum + (item.quantity * item.costPrice));
+    final profit = total - costAmount;
     final itemCount = items.fold<int>(0, (sum, item) => sum + item.quantity);
 
+    cartSubtotal.value = subtotal;
     cartTotal.value = total;
     cartProfit.value = profit;
     cartItemCount.value = itemCount;
@@ -237,7 +273,273 @@ class TransactionController extends GetxController {
 
   void clearCart() {
     cartItems.clear();
+    shippingCost.value = 0;
+    discount.value = 0;
+    serviceFee.value = 0;
+    tax.value = 0;
     showCart.value = false;
+  }
+
+  // Transaction Adjustments Dialog
+  void showAdjustmentsDialog() {
+    final shippingController = TextEditingController(text: shippingCost.value.toString());
+    final discountController = TextEditingController(text: discount.value.toString());
+    final serviceController = TextEditingController(text: serviceFee.value.toString());
+    final taxController = TextEditingController(text: tax.value.toString());
+
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: Get.width * 0.9,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  const Icon(Icons.tune, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Pengaturan Transaksi',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Shipping Cost
+              _buildAdjustmentField(
+                controller: shippingController,
+                label: 'Biaya Pengiriman',
+                icon: Icons.local_shipping,
+                onChanged: (value) {
+                  shippingCost.value = double.tryParse(value) ?? 0;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Discount
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: _buildAdjustmentField(
+                      controller: discountController,
+                      label: 'Diskon',
+                      icon: Icons.discount,
+                      onChanged: (value) {
+                        discount.value = double.tryParse(value) ?? 0;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Obx(() => DropdownButtonFormField<String>(
+                      value: discountType.value,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipe',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'amount', child: Text('Rp')),
+                        DropdownMenuItem(value: 'percentage', child: Text('%')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          discountType.value = value;
+                        }
+                      },
+                    )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Service Fee
+              _buildAdjustmentField(
+                controller: serviceController,
+                label: 'Biaya Layanan',
+                icon: Icons.room_service,
+                onChanged: (value) {
+                  serviceFee.value = double.tryParse(value) ?? 0;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Tax
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: _buildAdjustmentField(
+                      controller: taxController,
+                      label: 'Pajak',
+                      icon: Icons.receipt_long,
+                      onChanged: (value) {
+                        tax.value = double.tryParse(value) ?? 0;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: Obx(() => DropdownButtonFormField<String>(
+                      value: taxType.value,
+                      decoration: const InputDecoration(
+                        labelText: 'Tipe',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'amount', child: Text('Rp')),
+                        DropdownMenuItem(value: 'percentage', child: Text('%')),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) {
+                          taxType.value = value;
+                        }
+                      },
+                    )),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Preview
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Obx(() {
+                  final subtotal = cartSubtotal.value;
+                  final discountAmount = discountType.value == 'percentage'
+                      ? subtotal * (discount.value / 100)
+                      : discount.value;
+                  final taxableAmount = subtotal - discountAmount + serviceFee.value + shippingCost.value;
+                  final taxAmount = taxType.value == 'percentage'
+                      ? taxableAmount * (tax.value / 100)
+                      : tax.value;
+                  final total = subtotal - discountAmount + serviceFee.value + shippingCost.value + taxAmount;
+
+                  return Column(
+                    children: [
+                      _buildPreviewRow('Subtotal', subtotal),
+                      if (discount.value > 0)
+                        _buildPreviewRow(
+                          'Diskon ${discountType.value == 'percentage' ? '(${discount.value}%)' : ''}',
+                          -discountAmount,
+                          isNegative: true,
+                        ),
+                      if (serviceFee.value > 0)
+                        _buildPreviewRow('Biaya Layanan', serviceFee.value),
+                      if (shippingCost.value > 0)
+                        _buildPreviewRow('Biaya Pengiriman', shippingCost.value),
+                      if (tax.value > 0)
+                        _buildPreviewRow(
+                          'Pajak ${taxType.value == 'percentage' ? '(${tax.value}%)' : ''}',
+                          taxAmount,
+                        ),
+                      const Divider(),
+                      _buildPreviewRow('Total', total, isBold: true),
+                    ],
+                  );
+                }),
+              ),
+              const SizedBox(height: 20),
+
+              // Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        // Reset values
+                        shippingCost.value = 0;
+                        discount.value = 0;
+                        serviceFee.value = 0;
+                        tax.value = 0;
+                        Get.back();
+                      },
+                      child: const Text('Reset'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.back();
+                        Get.snackbar(
+                          'Berhasil',
+                          'Pengaturan transaksi telah diperbarui',
+                          backgroundColor: Colors.green.shade100,
+                          colorText: Colors.green.shade800,
+                        );
+                      },
+                      child: const Text('Terapkan'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdjustmentField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required Function(String) onChanged,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+      keyboardType: TextInputType.number,
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildPreviewRow(String label, double amount, {bool isNegative = false, bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            fontSize: isBold ? 16 : 14,
+          ),
+        ),
+        Text(
+          '${isNegative ? '-' : ''}Rp ${formatPrice(amount.abs())}',
+          style: TextStyle(
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            fontSize: isBold ? 16 : 14,
+            color: isNegative ? Colors.red : (isBold ? Colors.black : Colors.grey.shade700),
+          ),
+        ),
+      ],
+    );
   }
 
   // Barcode Scanning
@@ -282,7 +584,23 @@ class TransactionController extends GetxController {
     try {
       isProcessingTransaction.value = true;
 
-      final transaction = await _service.addTransaction(items: cartItems.toList());
+      // Calculate final amounts for transaction
+      final discountAmount = discountType.value == 'percentage'
+          ? cartSubtotal.value * (discount.value / 100)
+          : discount.value;
+
+      final taxableAmount = cartSubtotal.value - discountAmount + serviceFee.value + shippingCost.value;
+      final taxAmount = taxType.value == 'percentage'
+          ? taxableAmount * (tax.value / 100)
+          : tax.value;
+
+      final transaction = await _service.addTransaction(
+        items: cartItems.toList(),
+        discount: discountAmount,
+        tax: taxAmount,
+        shippingCost: shippingCost.value,
+        serviceFee: serviceFee.value,
+      );
 
       // Clear cart after successful transaction
       clearCart();
