@@ -14,3 +14,4 @@ const String settingsRoute = '/settings';
 const String faqRoute = '/faq';
 const String privasiRoute = '/privasi';
 const String contactRoute = '/contact';
+const String receiptRoute = '/receipt';

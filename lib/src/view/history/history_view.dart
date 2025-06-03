@@ -123,6 +123,17 @@ class HistoryView extends StatelessWidget {
                                         PopupMenuItem(
                                           child: const Row(
                                             children: [
+                                              Icon(Icons.receipt, size: 20),
+                                              SizedBox(width: 8),
+                                              Text('Lihat Struk'),
+                                            ],
+                                          ),
+                                          onTap:
+                                              () => _showReceipt(transaction),
+                                        ),
+                                        PopupMenuItem(
+                                          child: const Row(
+                                            children: [
                                               Icon(Icons.print, size: 20),
                                               SizedBox(width: 8),
                                               Text('Cetak'),
@@ -351,5 +362,13 @@ class HistoryView extends StatelessWidget {
           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]}.',
         );
+  }
+
+  void _showReceipt(Transaction transaction) {
+    Get.toNamed('/receipt', arguments: {
+      'transaction': transaction,
+      'customerName': 'Alvin',
+      'phoneNumber': '08573671088',
+    });
   }
 }

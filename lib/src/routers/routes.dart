@@ -8,6 +8,7 @@ import 'package:sadean/src/view/transaction/transaction_detail.dart';
 import 'package:sadean/src/view/transaction/transaction_index.dart';
 import 'package:sadean/src/view/transaction/transaction_view.dart';
 import '../view/history/history_detail.dart';
+import '../view/history/receipt_view.dart';
 import '../view/login/login.dart';
 import '../view/main_page.dart';
 import '../view/splash_Screen.dart';
@@ -54,4 +55,12 @@ final List<GetPage<dynamic>> routes = [
     name: contactRoute,
     page: () => ContactUsPage(),
   ),
+GetPage(
+name: receiptRoute,
+page: () => ReceiptView(
+transaction: Get.arguments['transaction'],
+customerName: Get.arguments['customerName'] ?? 'Alvin',
+phoneNumber: Get.arguments['phoneNumber'] ?? '08573671088',
+),
+),
 ];

@@ -648,11 +648,15 @@ class TransactionController extends GetxController {
           ElevatedButton.icon(
             onPressed: () {
               Get.back();
-              printReceipt(transaction);
-              Get.back(); // Return to main screen
+              // Navigate to Receipt View with transaction data
+              Get.toNamed('/receipt', arguments: {
+                'transaction': transaction,
+                'customerName': 'Alvin',
+                'phoneNumber': '08573671088',
+              });
             },
-            icon: const Icon(Icons.print),
-            label: const Text('Cetak Struk'),
+            icon: const Icon(Icons.receipt),
+            label: const Text('Lihat Struk'),
           ),
         ],
       ),
