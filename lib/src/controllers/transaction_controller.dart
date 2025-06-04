@@ -9,6 +9,7 @@ import '../models/transaction_model.dart';
 import '../service/category_service.dart';
 import '../service/product_service.dart';
 import '../service/transaction_service.dart';
+import '../view/history/receipt_view.dart';
 
 class TransactionController extends GetxController {
   final TransactionService _service = Get.find<TransactionService>();
@@ -30,6 +31,14 @@ class TransactionController extends GetxController {
   final RxString discountType = 'amount'.obs; // 'amount' or 'percentage'
   final RxString taxType = 'amount'.obs; // 'amount' or 'percentage'
 
+  // Payment Management
+  final RxString paymentMethod = 'cash'.obs;
+  final RxDouble amountPaid = 0.0.obs;
+  final RxDouble changeAmount = 0.0.obs;
+  final RxString paymentStatus = 'paid'.obs;
+  final RxString customerName = ''.obs;
+  final RxString transactionNotes = ''.obs;
+
   // Product Management
   final RxList<Product> products = <Product>[].obs;
   final RxList<Product> filteredProducts = <Product>[].obs;
@@ -41,6 +50,7 @@ class TransactionController extends GetxController {
   final RxBool isLoading = false.obs;
   final RxBool isProcessingTransaction = false.obs;
   final RxBool showCart = false.obs;
+  final RxInt selectedTabIndex = 0.obs; // 0: Products, 1: Details, 2: Payment
 
   // Search controller
   final TextEditingController searchController = TextEditingController();
@@ -61,6 +71,10 @@ class TransactionController extends GetxController {
     ever(tax, (_) => _updateCartTotals(cartItems));
     ever(discountType, (_) => _updateCartTotals(cartItems));
     ever(taxType, (_) => _updateCartTotals(cartItems));
+
+    // Listen to payment amount changes to calculate change
+    ever(amountPaid, _calculateChange);
+    ever(cartTotal, _calculateChange);
   }
 
   @override
@@ -122,6 +136,11 @@ class TransactionController extends GetxController {
     searchQuery.value = '';
     searchController.clear();
     _performSearch('');
+  }
+
+  // Tab Management
+  void setSelectedTab(int index) {
+    selectedTabIndex.value = index;
   }
 
   // Cart Management Methods
@@ -277,7 +296,42 @@ class TransactionController extends GetxController {
     discount.value = 0;
     serviceFee.value = 0;
     tax.value = 0;
+    amountPaid.value = 0;
+    changeAmount.value = 0;
+    customerName.value = '';
+    transactionNotes.value = '';
     showCart.value = false;
+    selectedTabIndex.value = 0;
+  }
+
+  // Payment Methods
+  void setPaymentMethod(String method) {
+    paymentMethod.value = method;
+  }
+
+  void setAmountPaid(double amount) {
+    amountPaid.value = amount;
+  }
+
+  void setQuickPayment(double multiplier) {
+    if (multiplier == 0) {
+      amountPaid.value = 0;
+    } else {
+      final quickAmount = (cartTotal.value * multiplier).ceilToDouble();
+      amountPaid.value = quickAmount;
+    }
+  }
+
+  void _calculateChange(double value) {
+    if (amountPaid.value >= cartTotal.value) {
+      changeAmount.value = amountPaid.value - cartTotal.value;
+    } else {
+      changeAmount.value = 0;
+    }
+  }
+
+  bool get canProcessPayment {
+    return cartItems.isNotEmpty && amountPaid.value >= cartTotal.value;
   }
 
   // Transaction Adjustments Dialog
@@ -581,6 +635,11 @@ class TransactionController extends GetxController {
       return;
     }
 
+    if (!canProcessPayment) {
+      Get.snackbar('Error', 'Jumlah pembayaran tidak mencukupi');
+      return;
+    }
+
     try {
       isProcessingTransaction.value = true;
 
@@ -600,6 +659,11 @@ class TransactionController extends GetxController {
         tax: taxAmount,
         shippingCost: shippingCost.value,
         serviceFee: serviceFee.value,
+        paymentMethod: paymentMethod.value,
+        amountPaid: amountPaid.value,
+        changeAmount: changeAmount.value,
+        customerName: customerName.value.isNotEmpty ? customerName.value : null,
+        notes: transactionNotes.value.isNotEmpty ? transactionNotes.value : null,
       );
 
       // Clear cart after successful transaction
@@ -634,7 +698,15 @@ class TransactionController extends GetxController {
             const SizedBox(height: 8),
             Text('Total: Rp ${formatPrice(transaction.totalAmount)}'),
             const SizedBox(height: 8),
+            Text('Dibayar: Rp ${formatPrice(transaction.amountPaid)}'),
+            if (transaction.changeAmount > 0) ...[
+              const SizedBox(height: 8),
+              Text('Kembalian: Rp ${formatPrice(transaction.changeAmount)}'),
+            ],
+            const SizedBox(height: 8),
             Text('Laba: Rp ${formatPrice(transaction.profit)}'),
+            const SizedBox(height: 8),
+            Text('Metode: ${_getPaymentMethodDisplay(transaction.paymentMethod)}'),
           ],
         ),
         actions: [
@@ -648,12 +720,12 @@ class TransactionController extends GetxController {
           ElevatedButton.icon(
             onPressed: () {
               Get.back();
-              // Navigate to Receipt View with transaction data
-              Get.toNamed('/receipt', arguments: {
-                'transaction': transaction,
-                'customerName': 'Alvin',
-                'phoneNumber': '08573671088',
-              });
+              // Navigate to Receipt View with complete transaction data
+              Get.to(() => ReceiptView(
+                transaction: transaction,
+                customerName: transaction.customerName ?? 'Pelanggan',
+                phoneNumber: '08573671088',
+              ));
             },
             icon: const Icon(Icons.receipt),
             label: const Text('Lihat Struk'),
@@ -662,6 +734,21 @@ class TransactionController extends GetxController {
       ),
       barrierDismissible: false,
     );
+  }
+
+  String _getPaymentMethodDisplay(String method) {
+    switch (method.toLowerCase()) {
+      case 'cash':
+        return 'Tunai';
+      case 'qris':
+        return 'QRIS';
+      case 'transfer':
+        return 'Transfer Bank';
+      case 'card':
+        return 'Kartu';
+      default:
+        return method.toUpperCase();
+    }
   }
 
   void printReceipt(Transaction transaction) {

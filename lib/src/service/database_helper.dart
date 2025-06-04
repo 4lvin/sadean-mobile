@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "sadean_pos.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2; // Incremented for payment support
 
   // Table names
   static const String tableCategories = 'categories';
@@ -70,7 +70,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Transactions table
+    // Transactions table with payment fields
     await db.execute('''
       CREATE TABLE $tableTransactions (
         id TEXT PRIMARY KEY,
@@ -83,6 +83,10 @@ class DatabaseHelper {
         tax REAL DEFAULT 0,
         shipping_cost REAL DEFAULT 0,
         service_fee REAL DEFAULT 0,
+        payment_method TEXT DEFAULT 'cash',
+        amount_paid REAL DEFAULT 0,
+        change_amount REAL DEFAULT 0,
+        payment_status TEXT DEFAULT 'paid',
         customer_name TEXT,
         notes TEXT,
         created_at TEXT NOT NULL,
@@ -115,10 +119,12 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Handle database schema migrations here
     if (oldVersion < 2) {
-      // Example: Add new column in version 2
-      // await db.execute('ALTER TABLE $tableProducts ADD COLUMN new_column TEXT');
+      // Add payment fields to existing transactions table
+      await db.execute('ALTER TABLE $tableTransactions ADD COLUMN payment_method TEXT DEFAULT "cash"');
+      await db.execute('ALTER TABLE $tableTransactions ADD COLUMN amount_paid REAL DEFAULT 0');
+      await db.execute('ALTER TABLE $tableTransactions ADD COLUMN change_amount REAL DEFAULT 0');
+      await db.execute('ALTER TABLE $tableTransactions ADD COLUMN payment_status TEXT DEFAULT "paid"');
     }
   }
 

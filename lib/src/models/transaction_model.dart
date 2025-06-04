@@ -6,12 +6,19 @@ class Transaction {
   final double costAmount;
   final double profit;
 
-  // New fields for adjustments
+  // Transaction adjustments
   final double? subtotal;
   final double? discount;
   final double? tax;
   final double? shippingCost;
   final double? serviceFee;
+
+  // Payment information
+  final String paymentMethod;
+  final double amountPaid;
+  final double changeAmount;
+  final String paymentStatus;
+
   final String? customerName;
   final String? notes;
 
@@ -27,6 +34,10 @@ class Transaction {
     this.tax,
     this.shippingCost,
     this.serviceFee,
+    this.paymentMethod = 'cash',
+    this.amountPaid = 0,
+    this.changeAmount = 0,
+    this.paymentStatus = 'paid',
     this.customerName,
     this.notes,
   });
@@ -43,6 +54,10 @@ class Transaction {
     'tax': tax,
     'shipping_cost': shippingCost,
     'service_fee': serviceFee,
+    'payment_method': paymentMethod,
+    'amount_paid': amountPaid,
+    'change_amount': changeAmount,
+    'payment_status': paymentStatus,
     'customer_name': customerName,
     'notes': notes,
   };
@@ -59,6 +74,10 @@ class Transaction {
     tax: json['tax']?.toDouble(),
     shippingCost: json['shipping_cost']?.toDouble(),
     serviceFee: json['service_fee']?.toDouble(),
+    paymentMethod: json['payment_method'] ?? 'cash',
+    amountPaid: json['amount_paid']?.toDouble() ?? 0.0,
+    changeAmount: json['change_amount']?.toDouble() ?? 0.0,
+    paymentStatus: json['payment_status'] ?? 'paid',
     customerName: json['customer_name'],
     notes: json['notes'],
   );
@@ -90,6 +109,11 @@ class Transaction {
     return subtotal ?? items.fold<double>(0, (sum, item) => sum + (item.quantity * item.unitPrice));
   }
 
+  // Helper methods for payment
+  bool get isPaid => paymentStatus == 'paid';
+  bool get isPending => paymentStatus == 'pending';
+  bool get isCancelled => paymentStatus == 'cancelled';
+
   Transaction copyWith({
     String? id,
     DateTime? date,
@@ -102,6 +126,10 @@ class Transaction {
     double? tax,
     double? shippingCost,
     double? serviceFee,
+    String? paymentMethod,
+    double? amountPaid,
+    double? changeAmount,
+    String? paymentStatus,
     String? customerName,
     String? notes,
   }) {
@@ -117,6 +145,10 @@ class Transaction {
       tax: tax ?? this.tax,
       shippingCost: shippingCost ?? this.shippingCost,
       serviceFee: serviceFee ?? this.serviceFee,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      amountPaid: amountPaid ?? this.amountPaid,
+      changeAmount: changeAmount ?? this.changeAmount,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       customerName: customerName ?? this.customerName,
       notes: notes ?? this.notes,
     );

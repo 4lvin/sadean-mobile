@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sadean/src/controllers/setting_controller.dart';
 import 'package:sadean/src/view/history/history_detail.dart';
 import '../../controllers/history_controller.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +13,7 @@ import '../transaction/transaction_detail.dart';
 class HistoryView extends StatelessWidget {
   final HistoryController controller = Get.find<HistoryController>();
   final BluetoothPrintService _printService = BluetoothPrintService();
+  final SettingsController setController = Get.find<SettingsController>();
 
   @override
   Widget build(BuildContext context) {
@@ -300,29 +302,33 @@ class HistoryView extends StatelessWidget {
   }
 
   void _printTransaction(Transaction transaction) async {
-    if (_printService.devices.isEmpty) {
+    if (setController.printers.isEmpty) {
       await _printService.startScan();
     }
 
-    if (_printService.devices.isNotEmpty) {
-      _printService.selectDevice(_printService.devices.first);
-
-      List<String> items = transaction.items
-          .map((e) => '${e.productName} x${e.quantity}    Rp${e.costPrice}')
-          .toList();
+    if (setController.selectedPrinterDevice.value != null) {
+      // _printService.selectDevice(_printService.devices.first);
 
       try {
-        await _printService.printTransaction(
-          title: 'Struk Transaksi ${transaction.id}',
-          items: items,
+        await setController.printTransaction(
+          customerName: "SADEAN",
+          customerLocation: "PANDAAN",
+          customerPhone: "085736710089",
+          dateTime: DateTime.now().toString(),
+          items: transaction.items,
+          subtotal: 'Rp ${transaction.subtotal.toString()}',
+          adminFee: 'Rp ${transaction.serviceFee.toString()}',
           total: 'Rp ${transaction.totalAmount.toStringAsFixed(0)}',
-          footer: 'Terima Kasih!',
+          payment: 'Rp ${transaction.paymentMethod.toString()}',
+          change: 'Rp ${transaction.changeAmount.toString()}',
+          status: 'LUNAS',
+          trxCode: 'TRX-${transaction.id}',
         );
 
-        Get.snackbar(
-          'Info',
-          'Struk transaksi ${transaction.id} berhasil dicetak',
-        );
+        // Get.snackbar(
+        //   'Info',
+        //   'Struk transaksi ${transaction.id} berhasil dicetak',
+        // );
       } catch (e) {
         Get.snackbar('Error', e.toString());
       }

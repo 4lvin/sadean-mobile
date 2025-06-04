@@ -23,9 +23,20 @@ class TransactionService extends GetxService {
           id: transactionMap['id'],
           date: DateTime.parse(transactionMap['date']),
           items: items,
-          totalAmount: transactionMap['total_amount'],
-          costAmount: transactionMap['cost_amount'],
-          profit: transactionMap['profit'],
+          totalAmount: transactionMap['total_amount']?.toDouble() ?? 0.0,
+          costAmount: transactionMap['cost_amount']?.toDouble() ?? 0.0,
+          profit: transactionMap['profit']?.toDouble() ?? 0.0,
+          subtotal: transactionMap['subtotal']?.toDouble(),
+          discount: transactionMap['discount']?.toDouble(),
+          tax: transactionMap['tax']?.toDouble(),
+          shippingCost: transactionMap['shipping_cost']?.toDouble(),
+          serviceFee: transactionMap['service_fee']?.toDouble(),
+          paymentMethod: transactionMap['payment_method'] ?? 'cash',
+          amountPaid: transactionMap['amount_paid']?.toDouble() ?? 0.0,
+          changeAmount: transactionMap['change_amount']?.toDouble() ?? 0.0,
+          paymentStatus: transactionMap['payment_status'] ?? 'paid',
+          customerName: transactionMap['customer_name'],
+          notes: transactionMap['notes'],
         ));
       }
 
@@ -54,9 +65,20 @@ class TransactionService extends GetxService {
         id: transactionMap['id'],
         date: DateTime.parse(transactionMap['date']),
         items: items,
-        totalAmount: transactionMap['total_amount'],
-        costAmount: transactionMap['cost_amount'],
-        profit: transactionMap['profit'],
+        totalAmount: transactionMap['total_amount']?.toDouble() ?? 0.0,
+        costAmount: transactionMap['cost_amount']?.toDouble() ?? 0.0,
+        profit: transactionMap['profit']?.toDouble() ?? 0.0,
+        subtotal: transactionMap['subtotal']?.toDouble(),
+        discount: transactionMap['discount']?.toDouble(),
+        tax: transactionMap['tax']?.toDouble(),
+        shippingCost: transactionMap['shipping_cost']?.toDouble(),
+        serviceFee: transactionMap['service_fee']?.toDouble(),
+        paymentMethod: transactionMap['payment_method'] ?? 'cash',
+        amountPaid: transactionMap['amount_paid']?.toDouble() ?? 0.0,
+        changeAmount: transactionMap['change_amount']?.toDouble() ?? 0.0,
+        paymentStatus: transactionMap['payment_status'] ?? 'paid',
+        customerName: transactionMap['customer_name'],
+        notes: transactionMap['notes'],
       );
     } catch (e) {
       print('Error getting transaction by id: $e');
@@ -68,8 +90,14 @@ class TransactionService extends GetxService {
     required List<TransactionItem> items,
     double discount = 0,
     double tax = 0,
-    shippingCost = 0,
-    serviceFee = 0
+    double shippingCost = 0,
+    double serviceFee = 0,
+    String paymentMethod = 'cash',
+    double amountPaid = 0,
+    double changeAmount = 0,
+    String paymentStatus = 'paid',
+    String? customerName,
+    String? notes,
   }) async {
     if (items.isEmpty) {
       throw Exception('Transaksi harus memiliki minimal 1 item');
@@ -104,21 +132,30 @@ class TransactionService extends GetxService {
           0,
               (sum, item) => sum + (item.quantity * item.costPrice),
         );
-        final totalAmount = subtotal - discount + tax;
+        final totalAmount = subtotal - discount + tax + shippingCost + serviceFee;
         final profit = totalAmount - costAmount;
 
         final transactionId = _generateTransactionId();
         final now = DateTime.now();
 
-        // Insert transaction
+        // Insert transaction with payment information
         await txn.insert(DatabaseHelper.tableTransactions, {
           'id': transactionId,
           'date': now.toIso8601String(),
           'total_amount': totalAmount,
           'cost_amount': costAmount,
           'profit': profit,
+          'subtotal': subtotal,
           'discount': discount,
           'tax': tax,
+          'shipping_cost': shippingCost,
+          'service_fee': serviceFee,
+          'payment_method': paymentMethod,
+          'amount_paid': amountPaid,
+          'change_amount': changeAmount,
+          'payment_status': paymentStatus,
+          'customer_name': customerName,
+          'notes': notes,
           'created_at': now.toIso8601String(),
           'updated_at': now.toIso8601String(),
         });
@@ -168,10 +205,46 @@ class TransactionService extends GetxService {
           totalAmount: totalAmount,
           costAmount: costAmount,
           profit: profit,
+          subtotal: subtotal,
+          discount: discount,
+          tax: tax,
+          shippingCost: shippingCost,
+          serviceFee: serviceFee,
+          paymentMethod: paymentMethod,
+          amountPaid: amountPaid,
+          changeAmount: changeAmount,
+          paymentStatus: paymentStatus,
+          customerName: customerName,
+          notes: notes,
         );
       });
     } catch (e) {
       print('Error adding transaction: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateTransactionPayment({
+    required String transactionId,
+    required String paymentMethod,
+    required double amountPaid,
+    required double changeAmount,
+    required String paymentStatus,
+  }) async {
+    try {
+      await _dbHelper.update(
+        DatabaseHelper.tableTransactions,
+        {
+          'payment_method': paymentMethod,
+          'amount_paid': amountPaid,
+          'change_amount': changeAmount,
+          'payment_status': paymentStatus,
+        },
+        'id = ?',
+        [transactionId],
+      );
+    } catch (e) {
+      print('Error updating transaction payment: $e');
       rethrow;
     }
   }
@@ -258,9 +331,20 @@ class TransactionService extends GetxService {
           id: transactionMap['id'],
           date: DateTime.parse(transactionMap['date']),
           items: items,
-          totalAmount: transactionMap['total_amount'],
-          costAmount: transactionMap['cost_amount'],
-          profit: transactionMap['profit'],
+          totalAmount: transactionMap['total_amount']?.toDouble() ?? 0.0,
+          costAmount: transactionMap['cost_amount']?.toDouble() ?? 0.0,
+          profit: transactionMap['profit']?.toDouble() ?? 0.0,
+          subtotal: transactionMap['subtotal']?.toDouble(),
+          discount: transactionMap['discount']?.toDouble(),
+          tax: transactionMap['tax']?.toDouble(),
+          shippingCost: transactionMap['shipping_cost']?.toDouble(),
+          serviceFee: transactionMap['service_fee']?.toDouble(),
+          paymentMethod: transactionMap['payment_method'] ?? 'cash',
+          amountPaid: transactionMap['amount_paid']?.toDouble() ?? 0.0,
+          changeAmount: transactionMap['change_amount']?.toDouble() ?? 0.0,
+          paymentStatus: transactionMap['payment_status'] ?? 'paid',
+          customerName: transactionMap['customer_name'],
+          notes: transactionMap['notes'],
         ));
       }
 
@@ -279,6 +363,88 @@ class TransactionService extends GetxService {
     return getTransactionsByDateRange(startOfDay, endOfDay);
   }
 
+  Future<List<Transaction>> getTransactionsByPaymentMethod(String paymentMethod) async {
+    try {
+      final List<Map<String, dynamic>> transactionMaps = await _dbHelper.query(
+        DatabaseHelper.tableTransactions,
+        where: 'payment_method = ?',
+        whereArgs: [paymentMethod],
+        orderBy: 'date DESC',
+      );
+
+      List<Transaction> transactions = [];
+
+      for (final transactionMap in transactionMaps) {
+        final items = await _getTransactionItems(transactionMap['id']);
+        transactions.add(Transaction(
+          id: transactionMap['id'],
+          date: DateTime.parse(transactionMap['date']),
+          items: items,
+          totalAmount: transactionMap['total_amount']?.toDouble() ?? 0.0,
+          costAmount: transactionMap['cost_amount']?.toDouble() ?? 0.0,
+          profit: transactionMap['profit']?.toDouble() ?? 0.0,
+          subtotal: transactionMap['subtotal']?.toDouble(),
+          discount: transactionMap['discount']?.toDouble(),
+          tax: transactionMap['tax']?.toDouble(),
+          shippingCost: transactionMap['shipping_cost']?.toDouble(),
+          serviceFee: transactionMap['service_fee']?.toDouble(),
+          paymentMethod: transactionMap['payment_method'] ?? 'cash',
+          amountPaid: transactionMap['amount_paid']?.toDouble() ?? 0.0,
+          changeAmount: transactionMap['change_amount']?.toDouble() ?? 0.0,
+          paymentStatus: transactionMap['payment_status'] ?? 'paid',
+          customerName: transactionMap['customer_name'],
+          notes: transactionMap['notes'],
+        ));
+      }
+
+      return transactions;
+    } catch (e) {
+      print('Error getting transactions by payment method: $e');
+      return [];
+    }
+  }
+
+  Future<List<Transaction>> getTransactionsByStatus(String status) async {
+    try {
+      final List<Map<String, dynamic>> transactionMaps = await _dbHelper.query(
+        DatabaseHelper.tableTransactions,
+        where: 'payment_status = ?',
+        whereArgs: [status],
+        orderBy: 'date DESC',
+      );
+
+      List<Transaction> transactions = [];
+
+      for (final transactionMap in transactionMaps) {
+        final items = await _getTransactionItems(transactionMap['id']);
+        transactions.add(Transaction(
+          id: transactionMap['id'],
+          date: DateTime.parse(transactionMap['date']),
+          items: items,
+          totalAmount: transactionMap['total_amount']?.toDouble() ?? 0.0,
+          costAmount: transactionMap['cost_amount']?.toDouble() ?? 0.0,
+          profit: transactionMap['profit']?.toDouble() ?? 0.0,
+          subtotal: transactionMap['subtotal']?.toDouble(),
+          discount: transactionMap['discount']?.toDouble(),
+          tax: transactionMap['tax']?.toDouble(),
+          shippingCost: transactionMap['shipping_cost']?.toDouble(),
+          serviceFee: transactionMap['service_fee']?.toDouble(),
+          paymentMethod: transactionMap['payment_method'] ?? 'cash',
+          amountPaid: transactionMap['amount_paid']?.toDouble() ?? 0.0,
+          changeAmount: transactionMap['change_amount']?.toDouble() ?? 0.0,
+          paymentStatus: transactionMap['payment_status'] ?? 'paid',
+          customerName: transactionMap['customer_name'],
+          notes: transactionMap['notes'],
+        ));
+      }
+
+      return transactions;
+    } catch (e) {
+      print('Error getting transactions by status: $e');
+      return [];
+    }
+  }
+
   Future<Map<String, double>> getDashboardStats() async {
     try {
       final result = await _dbHelper.rawQuery('''
@@ -286,8 +452,11 @@ class TransactionService extends GetxService {
           COUNT(*) as transaction_count,
           COALESCE(SUM(total_amount), 0) as total_revenue,
           COALESCE(SUM(cost_amount), 0) as total_cost,
-          COALESCE(SUM(profit), 0) as total_profit
+          COALESCE(SUM(profit), 0) as total_profit,
+          COALESCE(SUM(amount_paid), 0) as total_paid,
+          COALESCE(SUM(change_amount), 0) as total_change
         FROM ${DatabaseHelper.tableTransactions}
+        WHERE payment_status = 'paid'
       ''');
 
       final stats = result.first;
@@ -296,6 +465,8 @@ class TransactionService extends GetxService {
         'cost': stats['total_cost'] as double,
         'profit': stats['total_profit'] as double,
         'transactionCount': (stats['transaction_count'] as int).toDouble(),
+        'totalPaid': stats['total_paid'] as double,
+        'totalChange': stats['total_change'] as double,
       };
     } catch (e) {
       print('Error getting dashboard stats: $e');
@@ -304,6 +475,8 @@ class TransactionService extends GetxService {
         'cost': 0.0,
         'profit': 0.0,
         'transactionCount': 0.0,
+        'totalPaid': 0.0,
+        'totalChange': 0.0,
       };
     }
   }
@@ -319,9 +492,11 @@ class TransactionService extends GetxService {
           COUNT(*) as transaction_count,
           COALESCE(SUM(total_amount), 0) as total_revenue,
           COALESCE(SUM(cost_amount), 0) as total_cost,
-          COALESCE(SUM(profit), 0) as total_profit
+          COALESCE(SUM(profit), 0) as total_profit,
+          COALESCE(SUM(amount_paid), 0) as total_paid,
+          COALESCE(SUM(change_amount), 0) as total_change
         FROM ${DatabaseHelper.tableTransactions}
-        WHERE date >= ? AND date < ?
+        WHERE date >= ? AND date < ? AND payment_status = 'paid'
       ''', [startOfDay.toIso8601String(), endOfDay.toIso8601String()]);
 
       final stats = result.first;
@@ -330,6 +505,8 @@ class TransactionService extends GetxService {
         'cost': stats['total_cost'] as double,
         'profit': stats['total_profit'] as double,
         'transactionCount': (stats['transaction_count'] as int).toDouble(),
+        'totalPaid': stats['total_paid'] as double,
+        'totalChange': stats['total_change'] as double,
       };
     } catch (e) {
       print('Error getting today stats: $e');
@@ -338,6 +515,34 @@ class TransactionService extends GetxService {
         'cost': 0.0,
         'profit': 0.0,
         'transactionCount': 0.0,
+        'totalPaid': 0.0,
+        'totalChange': 0.0,
+      };
+    }
+  }
+
+  Future<Map<String, dynamic>> getPaymentMethodStats() async {
+    try {
+      final result = await _dbHelper.rawQuery('''
+        SELECT 
+          payment_method,
+          COUNT(*) as transaction_count,
+          COALESCE(SUM(total_amount), 0) as total_amount
+        FROM ${DatabaseHelper.tableTransactions}
+        WHERE payment_status = 'paid'
+        GROUP BY payment_method
+        ORDER BY total_amount DESC
+      ''');
+
+      return {
+        'byMethod': result,
+        'totalMethods': result.length,
+      };
+    } catch (e) {
+      print('Error getting payment method stats: $e');
+      return {
+        'byMethod': [],
+        'totalMethods': 0,
       };
     }
   }
@@ -350,9 +555,11 @@ class TransactionService extends GetxService {
           COUNT(*) as transaction_count,
           COALESCE(SUM(total_amount), 0) as total_revenue,
           COALESCE(SUM(cost_amount), 0) as total_cost,
-          COALESCE(SUM(profit), 0) as total_profit
+          COALESCE(SUM(profit), 0) as total_profit,
+          COALESCE(SUM(amount_paid), 0) as total_paid,
+          COALESCE(SUM(change_amount), 0) as total_change
         FROM ${DatabaseHelper.tableTransactions}
-        WHERE date >= datetime('now', '-$months months')
+        WHERE date >= datetime('now', '-$months months') AND payment_status = 'paid'
         GROUP BY strftime('%Y-%m', date)
         ORDER BY month DESC
       ''');
@@ -362,6 +569,92 @@ class TransactionService extends GetxService {
       print('Error getting monthly stats: $e');
       return [];
     }
+  }
+
+  // New method to get payment summary
+  Future<Map<String, dynamic>> getPaymentSummary({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      String whereClause = "payment_status = 'paid'";
+      List<dynamic> whereArgs = [];
+
+      if (startDate != null && endDate != null) {
+        whereClause += " AND date >= ? AND date <= ?";
+        whereArgs.addAll([
+          startDate.toIso8601String(),
+          endDate.add(const Duration(days: 1)).toIso8601String(),
+        ]);
+      }
+
+      final result = await _dbHelper.rawQuery('''
+        SELECT 
+          payment_method,
+          COUNT(*) as transaction_count,
+          COALESCE(SUM(total_amount), 0) as total_amount,
+          COALESCE(SUM(amount_paid), 0) as total_paid,
+          COALESCE(SUM(change_amount), 0) as total_change
+        FROM ${DatabaseHelper.tableTransactions}
+        WHERE $whereClause
+        GROUP BY payment_method
+        ORDER BY total_amount DESC
+      ''', whereArgs);
+
+      final totalResult = await _dbHelper.rawQuery('''
+        SELECT 
+          COUNT(*) as total_transactions,
+          COALESCE(SUM(total_amount), 0) as total_revenue,
+          COALESCE(SUM(amount_paid), 0) as total_paid,
+          COALESCE(SUM(change_amount), 0) as total_change
+        FROM ${DatabaseHelper.tableTransactions}
+        WHERE $whereClause
+      ''', whereArgs);
+
+      return {
+        'byMethod': result,
+        'summary': totalResult.isNotEmpty ? totalResult.first : {},
+      };
+    } catch (e) {
+      print('Error getting payment summary: $e');
+      return {
+        'byMethod': [],
+        'summary': {},
+      };
+    }
+  }
+
+  // New method to update transaction status
+  Future<void> updateTransactionStatus({
+    required String transactionId,
+    required String status,
+  }) async {
+    try {
+      await _dbHelper.update(
+        DatabaseHelper.tableTransactions,
+        {'payment_status': status},
+        'id = ?',
+        [transactionId],
+      );
+    } catch (e) {
+      print('Error updating transaction status: $e');
+      rethrow;
+    }
+  }
+
+  // New method to get pending transactions
+  Future<List<Transaction>> getPendingTransactions() async {
+    return getTransactionsByStatus('pending');
+  }
+
+  // New method to get completed transactions
+  Future<List<Transaction>> getCompletedTransactions() async {
+    return getTransactionsByStatus('paid');
+  }
+
+  // New method to get cancelled transactions
+  Future<List<Transaction>> getCancelledTransactions() async {
+    return getTransactionsByStatus('cancelled');
   }
 
   // Helper methods
@@ -377,8 +670,8 @@ class TransactionService extends GetxService {
         productId: map['product_id'],
         productName: map['product_name'],
         quantity: map['quantity'],
-        unitPrice: map['unit_price'],
-        costPrice: map['cost_price'],
+        unitPrice: map['unit_price']?.toDouble() ?? 0.0,
+        costPrice: map['cost_price']?.toDouble() ?? 0.0,
       )).toList();
     } catch (e) {
       print('Error getting transaction items: $e');

@@ -114,7 +114,7 @@ class ReceiptView extends StatelessWidget {
                         children: [
                           // Header - Store Name & Customer Info
                           Text(
-                            customerName,
+                            transaction.customerName ?? customerName,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -165,8 +165,25 @@ class ReceiptView extends StatelessWidget {
                           // Totals Section
                           _buildTotalRow('Subtotal', transaction.calculatedSubtotal),
 
+                          // Discount (if any)
                           if (transaction.discount != null && transaction.discount! > 0)
-                            _buildTotalRow('Layanan', transaction.serviceFee ?? 0),
+                            _buildTotalRow(
+                              'Diskon',
+                              -transaction.discount!,
+                              isNegative: true,
+                            ),
+
+                          // Service Fee (if any)
+                          if (transaction.serviceFee != null && transaction.serviceFee! > 0)
+                            _buildTotalRow('Biaya Admin', transaction.serviceFee!),
+
+                          // Shipping Cost (if any)
+                          if (transaction.shippingCost != null && transaction.shippingCost! > 0)
+                            _buildTotalRow('Ongkos Kirim', transaction.shippingCost!),
+
+                          // Tax (if any)
+                          if (transaction.tax != null && transaction.tax! > 0)
+                            _buildTotalRow('Pajak', transaction.tax!),
 
                           const SizedBox(height: 8),
 
@@ -178,29 +195,42 @@ class ReceiptView extends StatelessWidget {
                             fontSize: 18,
                           ),
 
-                          _buildTotalRow(
-                            'Pembayaran',
-                            _calculatePayment(),
-                            isBold: true,
-                            fontSize: 16,
-                          ),
+                          const SizedBox(height: 8),
+                          _buildDividerLine(),
+                          const SizedBox(height: 8),
 
-                          _buildTotalRow(
-                            'Kembali',
-                            _calculateChange(),
-                            isBold: true,
-                            fontSize: 16,
-                          ),
+                          // Payment Information
+                          _buildPaymentSection(),
 
                           const SizedBox(height: 16),
 
                           // Status
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor().withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: _getStatusColor()),
+                            ),
+                            child: Text(
+                              _getStatusText(),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: _getStatusColor(),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          // Payment Method
                           Text(
-                            'LUNAS',
+                            _getPaymentMethodText(),
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
 
@@ -224,6 +254,30 @@ class ReceiptView extends StatelessWidget {
                               color: Colors.grey[500],
                             ),
                           ),
+
+                          // Notes (if any)
+                          if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
+                            const SizedBox(height: 12),
+                            _buildDividerLine(),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Catatan:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              transaction.notes!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -342,6 +396,7 @@ class ReceiptView extends StatelessWidget {
 
   Widget _buildTotalRow(String label, double amount, {
     bool isBold = false,
+    bool isNegative = false,
     double fontSize = 14,
   }) {
     return Padding(
@@ -357,14 +412,64 @@ class ReceiptView extends StatelessWidget {
             ),
           ),
           Text(
-            _formatCurrency(amount),
+            '${isNegative ? '-' : ''}${_formatCurrency(amount.abs())}',
             style: TextStyle(
               fontSize: fontSize,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+              color: isNegative ? Colors.red : null,
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPaymentSection() {
+    return Column(
+      children: [
+        // Payment Amount
+        _buildTotalRow(
+          'Pembayaran',
+          transaction.amountPaid,
+          isBold: true,
+          fontSize: 16,
+        ),
+
+        // Change Amount (if any)
+        if (transaction.changeAmount > 0)
+          _buildTotalRow(
+            'Kembali',
+            transaction.changeAmount,
+            isBold: true,
+            fontSize: 16,
+          ),
+
+        // Exact payment case
+        if (transaction.changeAmount == 0 && transaction.amountPaid == transaction.totalAmount)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Kembali',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Pas',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -385,26 +490,58 @@ class ReceiptView extends StatelessWidget {
   String _formatCurrency(double amount) {
     return NumberFormat.currency(
       locale: 'id_ID',
-      symbol: '',
-      decimalDigits: 2,
-    ).format(amount).replaceAll(',00', ',00');
+      symbol: 'Rp',
+      decimalDigits: 0,
+    ).format(amount);
   }
 
   String _formatDateTime(DateTime date) {
-    return DateFormat('d MMM yyyy HH.mm', 'id_ID').format(date);
+    return DateFormat('d MMM yyyy HH:mm', 'id_ID').format(date);
   }
 
   String _formatDateTimeBottom(DateTime date) {
-    return DateFormat('d MMM yyyy HH.mm', 'id_ID').format(date);
+    return DateFormat('d MMM yyyy HH:mm', 'id_ID').format(date);
   }
 
-  double _calculatePayment() {
-    // Simulasi pembayaran (biasanya lebih besar atau sama dengan total)
-    return transaction.totalAmount + 1000; // Contoh: bayar lebih Rp 1000
+  Color _getStatusColor() {
+    switch (transaction.paymentStatus.toLowerCase()) {
+      case 'paid':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
-  double _calculateChange() {
-    return _calculatePayment() - transaction.totalAmount;
+  String _getStatusText() {
+    switch (transaction.paymentStatus.toLowerCase()) {
+      case 'paid':
+        return 'LUNAS';
+      case 'pending':
+        return 'MENUNGGU';
+      case 'cancelled':
+        return 'DIBATALKAN';
+      default:
+        return 'TIDAK DIKETAHUI';
+    }
+  }
+
+  String _getPaymentMethodText() {
+    switch (transaction.paymentMethod.toLowerCase()) {
+      case 'cash':
+        return 'Tunai';
+      case 'qris':
+        return 'QRIS';
+      case 'transfer':
+        return 'Transfer Bank';
+      case 'card':
+        return 'Kartu';
+      default:
+        return transaction.paymentMethod.toUpperCase();
+    }
   }
 
   void _showPrintDialog() {
@@ -481,7 +618,7 @@ class ReceiptView extends StatelessWidget {
 
   String _generateReceiptText() {
     String receipt = '''
-$customerName
+${transaction.customerName ?? customerName}
 Pandaan
 $phoneNumber
 
@@ -490,6 +627,7 @@ ${'-' * 32}
 
 ''';
 
+    // Items
     for (var item in transaction.items) {
       receipt += '${item.productName.toUpperCase()}\n';
       receipt += '${item.quantity}pcs x ${_formatCurrency(item.unitPrice)} = ${_formatCurrency(item.totalPrice)}\n\n';
@@ -499,20 +637,47 @@ ${'-' * 32}
 Subtotal: ${_formatCurrency(transaction.calculatedSubtotal)}
 ''';
 
+    // Adjustments
+    if (transaction.discount != null && transaction.discount! > 0) {
+      receipt += 'Diskon: -${_formatCurrency(transaction.discount!)}\n';
+    }
+
     if (transaction.serviceFee != null && transaction.serviceFee! > 0) {
-      receipt += 'Layanan: ${_formatCurrency(transaction.serviceFee!)}\n';
+      receipt += 'Biaya Admin: ${_formatCurrency(transaction.serviceFee!)}\n';
+    }
+
+    if (transaction.shippingCost != null && transaction.shippingCost! > 0) {
+      receipt += 'Ongkos Kirim: ${_formatCurrency(transaction.shippingCost!)}\n';
+    }
+
+    if (transaction.tax != null && transaction.tax! > 0) {
+      receipt += 'Pajak: ${_formatCurrency(transaction.tax!)}\n';
     }
 
     receipt += '''
 Total Akhir: ${_formatCurrency(transaction.totalAmount)}
-Pembayaran: ${_formatCurrency(_calculatePayment())}
-Kembali: ${_formatCurrency(_calculateChange())}
+${'-' * 32}
+Pembayaran (${_getPaymentMethodText()}): ${_formatCurrency(transaction.amountPaid)}
+''';
 
-LUNAS
+    if (transaction.changeAmount > 0) {
+      receipt += 'Kembali: ${_formatCurrency(transaction.changeAmount)}\n';
+    } else if (transaction.changeAmount == 0 && transaction.amountPaid == transaction.totalAmount) {
+      receipt += 'Kembali: Pas\n';
+    }
+
+    receipt += '''
+${_getStatusText()}
 
 ${transaction.id}
 ${_formatDateTimeBottom(transaction.date)}
 ''';
+
+    if (transaction.notes != null && transaction.notes!.isNotEmpty) {
+      receipt += '''
+Catatan: ${transaction.notes}
+''';
+    }
 
     return receipt;
   }

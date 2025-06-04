@@ -1,7 +1,8 @@
 // ===========================
-// TRANSACTION DETAIL VIEW - ORIGINAL DESIGN WITH ADJUSTMENTS
+// TRANSACTION DETAIL VIEW WITH PAYMENT TAB
 // ===========================
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/controllers/transaction_controller.dart';
@@ -60,14 +61,15 @@ class TransactionDetailView extends StatelessWidget {
                 Container(
                   margin: const EdgeInsets.only(top: 16),
                   height: 50,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildTab('PRODUK', Icons.inventory_2_outlined, true),
-                      _buildTab('RINCIAN', Icons.receipt_long, false),
-                      _buildTab('PEMBAYARAN', Icons.payment, false),
-                    ],
-                  ),
+                  child: Obx(() =>
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildTab('PRODUK', Icons.inventory_2_outlined, 0),
+                          _buildTab('RINCIAN', Icons.receipt_long, 1),
+                          _buildTab('PEMBAYARAN', Icons.payment, 2),
+                        ],
+                      )),
                 ),
               ],
             ),
@@ -75,359 +77,18 @@ class TransactionDetailView extends StatelessWidget {
 
           // Content
           Expanded(
-            child: Obx(
-              () => ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Order summary card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: secondaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 0,
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Cart Items
-                        ...controller.cartItems.map(
-                          (item) => _buildOrderItem(item),
-                        ),
-
-                        if (controller.cartItems.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          const Divider(thickness: 1),
-                          const SizedBox(height: 16),
-                        ],
-
-                        // Subtotal
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Subtotal',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            Text(
-                              'Rp ${controller.formatPrice(controller.cartSubtotal.value)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        // Discount (if any)
-                        if (controller.discount.value > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Diskon ${_getDiscountLabel()}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              Text(
-                                '-Rp ${controller.formatPrice(_calculateDiscountAmount())}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        // Service Fee (if any)
-                        if (controller.serviceFee.value > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Biaya Layanan',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              Text(
-                                'Rp ${controller.formatPrice(controller.serviceFee.value)}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        // Shipping Cost (if any)
-                        if (controller.shippingCost.value > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Biaya Pengiriman',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              Text(
-                                'Rp ${controller.formatPrice(controller.shippingCost.value)}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        // Tax (if any)
-                        if (controller.tax.value > 0) ...[
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Pajak ${_getTaxLabel()}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              Text(
-                                'Rp ${controller.formatPrice(_calculateTaxAmount())}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        const SizedBox(height: 8),
-
-                        // Profit
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Laba',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            Text(
-                              'Rp ${controller.formatPrice(controller.cartProfit.value)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-
-                        // Total
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Akhir',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                            Text(
-                              'Rp ${controller.formatPrice(controller.cartTotal.value)}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: primaryColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Order options - Enhanced with adjustments
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildOrderOption(
-                        Icons.local_shipping_outlined,
-                        'Pengiriman',
-                        onTap: () => _showShippingDialog(),
-                        hasValue: controller.shippingCost.value > 0,
-                      ),
-                      _buildOrderOption(
-                        Icons.local_offer_outlined,
-                        'Diskon',
-                        onTap: () => _showDiscountDialog(),
-                        hasValue: controller.discount.value > 0,
-                      ),
-                      _buildOrderOption(
-                        Icons.volunteer_activism_outlined,
-                        'Layanan',
-                        onTap: () => _showServiceDialog(),
-                        hasValue: controller.serviceFee.value > 0,
-                      ),
-                      _buildOrderOption(
-                        Icons.account_balance_outlined,
-                        'Pajak',
-                        onTap: () => _showTaxDialog(),
-                        hasValue: controller.tax.value > 0,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            child: Obx(() => _buildTabContent()),
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 0,
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Obx(
-            () => ElevatedButton(
-              onPressed:
-                  controller.isProcessingTransaction.value
-                      ? null
-                      : () => controller.processTransaction(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child:
-                  controller.isProcessingTransaction.value
-                      ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text('MEMPROSES...'),
-                        ],
-                      )
-                      : const Text(
-                        'BAYAR LUNAS',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
-            ),
-          ),
-        ),
-      ),
+      bottomNavigationBar: Obx(() => _buildBottomBar()),
     );
   }
 
-  Widget _buildOrderItem(TransactionItem item) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.productName,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${item.quantity} x Rp ${controller.formatPrice(item.unitPrice)}',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            'Rp ${controller.formatPrice(item.quantity * item.unitPrice)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTab(String title, IconData icon, bool isActive) {
-    final backgroundColor =
-        isActive ? Colors.white : Colors.white.withOpacity(0.2);
+  Widget _buildTab(String title, IconData icon, int index) {
+    final isActive = controller.selectedTabIndex.value == index;
+    final backgroundColor = isActive ? Colors.white : Colors.white.withOpacity(
+        0.2);
     final textColor = isActive ? primaryColor : Colors.white;
     final iconColor = isActive ? primaryColor : Colors.white;
 
@@ -442,7 +103,7 @@ class TransactionDetailView extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
-            onTap: () {},
+            onTap: () => controller.setSelectedTab(index),
             borderRadius: BorderRadius.circular(8),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -468,12 +129,731 @@ class TransactionDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderOption(
-    IconData icon,
-    String label, {
-    VoidCallback? onTap,
-    bool hasValue = false,
-  }) {
+  Widget _buildTabContent() {
+    switch (controller.selectedTabIndex.value) {
+      case 0:
+        return _buildProductTab();
+      case 1:
+        return _buildDetailsTab();
+      case 2:
+        return _buildPaymentTab();
+      default:
+        return _buildProductTab();
+    }
+  }
+
+  Widget _buildProductTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Cart Items
+        if (controller.cartItems.isNotEmpty)
+          ...controller.cartItems.map((item) => _buildOrderItem(item)),
+
+        if (controller.cartItems.isEmpty)
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shopping_cart_outlined, size: 80,
+                    color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'Belum ada produk di keranjang',
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDetailsTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Order summary card
+        Container(
+          decoration: BoxDecoration(
+            color: secondaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 0,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Subtotal
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Subtotal',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    'Rp ${controller.formatPrice(controller.cartSubtotal.value)}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Discount
+              if (controller.discount.value > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Diskon ${_getDiscountLabel()}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      '-Rp ${controller.formatPrice(_calculateDiscountAmount())}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Service Fee
+              if (controller.serviceFee.value > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Biaya Layanan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      'Rp ${controller.formatPrice(controller.serviceFee.value)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Shipping Cost
+              if (controller.shippingCost.value > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Biaya Pengiriman',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      'Rp ${controller.formatPrice(controller.shippingCost.value)}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              // Tax
+              if (controller.tax.value > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Pajak ${_getTaxLabel()}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    Text(
+                      'Rp ${controller.formatPrice(_calculateTaxAmount())}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: 8),
+
+              // Profit
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Laba',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  Text(
+                    'Rp ${controller.formatPrice(controller.cartProfit.value)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Total
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Total Akhir',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  Text(
+                    'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Order Options
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildOrderOption(
+                    Icons.local_shipping_outlined,
+                    'Pengiriman',
+                    onTap: () => _showShippingDialog(),
+                    hasValue: controller.shippingCost.value > 0,
+                  ),
+                  _buildOrderOption(
+                    Icons.local_offer_outlined,
+                    'Diskon',
+                    onTap: () => _showDiscountDialog(),
+                    hasValue: controller.discount.value > 0,
+                  ),
+                  _buildOrderOption(
+                    Icons.volunteer_activism_outlined,
+                    'Layanan',
+                    onTap: () => _showServiceDialog(),
+                    hasValue: controller.serviceFee.value > 0,
+                  ),
+                  _buildOrderOption(
+                    Icons.account_balance_outlined,
+                    'Pajak',
+                    onTap: () => _showTaxDialog(),
+                    hasValue: controller.tax.value > 0,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+
+  Widget _buildPaymentTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // Payment Summary Card
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 0,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Total Summary
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Total Akhir',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Obx(() =>
+                      Text(
+                        'Rp ${controller.formatPrice(
+                            controller.cartTotal.value)}',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      )),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              // Payment Status
+              Obx(() =>
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Pembayaran'),
+                      Text(
+                        'Rp ${controller.formatPrice(
+                            controller.cartTotal.value)}',
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  )),
+
+              const SizedBox(height: 8),
+
+              // Amount Paid
+              Obx(() =>
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Kembali'),
+                      Text(
+                        'Rp ${controller.formatPrice(
+                            controller.changeAmount.value)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  )),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Payment Method Selection
+        const Text(
+          'Jenis Pembayaran',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Obx(() =>
+              DropdownButtonFormField<String>(
+                value: controller.paymentMethod.value,
+                decoration: const InputDecoration(
+                  labelText: 'Pilih Metode Pembayaran',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: 'cash',
+                    child: Row(
+                      children: [
+                        Icon(Icons.payments, color: Colors.green),
+                        SizedBox(width: 12),
+                        Text('Cash'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'qris',
+                    child: Row(
+                      children: [
+                        Icon(Icons.qr_code, color: Colors.blue),
+                        SizedBox(width: 12),
+                        Text('QRIS'),
+                      ],
+                    ),
+                  ),
+                  DropdownMenuItem(
+                    value: 'transfer',
+                    child: Row(
+                      children: [
+                        Icon(Icons.account_balance, color: Colors.purple),
+                        SizedBox(width: 12),
+                        Text('Transfer Bank'),
+                      ],
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.setPaymentMethod(value);
+                  }
+                },
+              )),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Payment Amount Input
+        const Text(
+          'Total Dibayar',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: TextField(
+            decoration: const InputDecoration(
+              labelText: 'Masukkan nominal',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+            ),
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            onChanged: (value) {
+              final amount = double.tryParse(value) ?? 0;
+              controller.setAmountPaid(amount);
+            },
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        // Quick Payment Buttons
+        const Text(
+          'Total Dibayar',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickPaymentButton('0%', 0),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildQuickPaymentButton('25%', 0.25),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildQuickPaymentButton('50%', 0.5),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildQuickPaymentButton('100%', 1.0),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 24),
+
+        // Customer Information (Optional)
+        const Text(
+          'Informasi Pelanggan (Opsional)',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: TextField(
+            decoration: const InputDecoration(
+              labelText: 'Nama Pelanggan',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+            ),
+            onChanged: (value) {
+              controller.customerName.value = value;
+            },
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: TextField(
+            decoration: const InputDecoration(
+              labelText: 'Catatan Transaksi',
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 12),
+            ),
+            maxLines: 3,
+            onChanged: (value) {
+              controller.transactionNotes.value = value;
+            },
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Payment Status Card
+        Obx(() =>
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: controller.canProcessPayment
+                    ? Colors.green.shade50
+                    : Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: controller.canProcessPayment
+                      ? Colors.green.shade300
+                      : Colors.orange.shade300,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    controller.canProcessPayment
+                        ? Icons.check_circle
+                        : Icons.warning,
+                    color: controller.canProcessPayment
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          controller.canProcessPayment
+                              ? 'Siap untuk diproses'
+                              : 'Pembayaran kurang',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: controller.canProcessPayment
+                                ? Colors.green.shade800
+                                : Colors.orange.shade800,
+                          ),
+                        ),
+                        if (!controller.canProcessPayment)
+                          Text(
+                            'Kurang: Rp ${controller.formatPrice(controller
+                                .cartTotal.value - controller.amountPaid
+                                .value)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildQuickPaymentButton(String label, double percentage) {
+    return Obx(() {
+      // Calculate expected amount for this button
+      double expectedAmount = 0;
+      if (percentage == 0) {
+        expectedAmount = 0;
+      } else if (percentage == 0.25) {
+        expectedAmount = controller.cartTotal.value * 1.25;
+      } else if (percentage == 0.5) {
+        expectedAmount = controller.cartTotal.value * 1.5;
+      } else if (percentage == 1.0) {
+        expectedAmount = controller.cartTotal.value;
+      }
+
+      // Check if this button is selected (with small tolerance for floating point comparison)
+      final isSelected = (controller.amountPaid.value - expectedAmount).abs() < 0.01;
+
+      return Container(
+        decoration: BoxDecoration(
+          color: isSelected ? primaryColor : Colors.grey.shade200,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () {
+              if (percentage == 0) {
+                controller.setAmountPaid(0);
+              } else if (percentage == 0.25) {
+                controller.setQuickPayment(1.25);
+              } else if (percentage == 0.5) {
+                controller.setQuickPayment(1.5);
+              } else if (percentage == 1.0) {
+                controller.setQuickPayment(1.0);
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildOrderItem(TransactionItem item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 0,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.productName,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${item.quantity} x Rp ${controller.formatPrice(
+                        item.unitPrice)}',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              'Rp ${controller.formatPrice(item.quantity * item.unitPrice)}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOrderOption(IconData icon,
+      String label, {
+        VoidCallback? onTap,
+        bool hasValue = false,
+      }) {
     return Column(
       children: [
         Container(
@@ -498,11 +878,9 @@ class TransactionDetailView extends StatelessWidget {
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  onTap:
-                      onTap ??
-                      () {
-                        Get.snackbar('Info', '$label belum tersedia');
-                      },
+                  onTap: onTap ?? () {
+                    Get.snackbar('Info', '$label belum tersedia');
+                  },
                   borderRadius: BorderRadius.circular(12),
                   child: Center(
                     child: Icon(
@@ -542,6 +920,119 @@ class TransactionDetailView extends StatelessWidget {
     );
   }
 
+  Widget _buildBottomBar() {
+    if (controller.selectedTabIndex.value == 2) {
+      // Payment tab - show payment button
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Obx(() =>
+              ElevatedButton(
+                onPressed: controller.isProcessingTransaction.value
+                    ? null
+                    : controller.canProcessPayment
+                    ? () => controller.processTransaction()
+                    : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: controller.canProcessPayment
+                      ? primaryColor
+                      : Colors.grey,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: controller.isProcessingTransaction.value
+                    ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Text('MEMPROSES...'),
+                  ],
+                )
+                    : const Text(
+                  'BAYAR LUNAS',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              )),
+        ),
+      );
+    } else {
+      // Other tabs - show continue button
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 0,
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Obx(() =>
+              ElevatedButton(
+                onPressed: controller.cartItems.isEmpty
+                    ? null
+                    : () {
+                  if (controller.selectedTabIndex.value < 2) {
+                    controller.setSelectedTab(
+                        controller.selectedTabIndex.value + 1);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  controller.selectedTabIndex.value == 0
+                      ? 'LANJUT KE RINCIAN'
+                      : 'LANJUT KE PEMBAYARAN',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+              )),
+        ),
+      );
+    }
+  }
+
   // ===========================
   // HELPER METHODS
   // ===========================
@@ -564,8 +1055,7 @@ class TransactionDetailView extends StatelessWidget {
   }
 
   double _calculateTaxAmount() {
-    final taxableAmount =
-        controller.cartSubtotal.value -
+    final taxableAmount = controller.cartSubtotal.value -
         _calculateDiscountAmount() +
         controller.serviceFee.value +
         controller.shippingCost.value;
@@ -579,12 +1069,10 @@ class TransactionDetailView extends StatelessWidget {
   // ADJUSTMENT DIALOGS
   // ===========================
   void _showShippingDialog() {
-    final controller = Get.find<TransactionController>();
     final shippingController = TextEditingController(
-      text:
-          controller.shippingCost.value > 0
-              ? controller.shippingCost.value.toString()
-              : '',
+      text: controller.shippingCost.value > 0
+          ? controller.shippingCost.value.toString()
+          : '',
     );
 
     Get.dialog(
@@ -622,12 +1110,10 @@ class TransactionDetailView extends StatelessWidget {
   }
 
   void _showDiscountDialog() {
-    final controller = Get.find<TransactionController>();
     final discountController = TextEditingController(
-      text:
-          controller.discount.value > 0
-              ? controller.discount.value.toString()
-              : '',
+      text: controller.discount.value > 0
+          ? controller.discount.value.toString()
+          : '',
     );
 
     Get.dialog(
@@ -648,35 +1134,34 @@ class TransactionDetailView extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Nilai Diskon',
                 border: const OutlineInputBorder(),
-                prefixText:
-                    controller.discountType.value == 'percentage' ? '' : 'Rp ',
-                suffixText:
-                    controller.discountType.value == 'percentage' ? '%' : '',
+                prefixText: controller.discountType.value == 'percentage'
+                    ? ''
+                    : 'Rp ',
+                suffixText: controller.discountType.value == 'percentage'
+                    ? '%'
+                    : '',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            Obx(
-              () => DropdownButtonFormField<String>(
-                value: controller.discountType.value,
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Diskon',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
-                  DropdownMenuItem(
-                    value: 'percentage',
-                    child: Text('Persentase'),
+            Obx(() =>
+                DropdownButtonFormField<String>(
+                  value: controller.discountType.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipe Diskon',
+                    border: OutlineInputBorder(),
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.discountType.value = value;
-                  }
-                },
-              ),
-            ),
+                  items: const [
+                    DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
+                    DropdownMenuItem(
+                        value: 'percentage', child: Text('Persentase')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.discountType.value = value;
+                    }
+                  },
+                )),
           ],
         ),
         actions: [
@@ -695,12 +1180,10 @@ class TransactionDetailView extends StatelessWidget {
   }
 
   void _showServiceDialog() {
-    final controller = Get.find<TransactionController>();
     final serviceController = TextEditingController(
-      text:
-          controller.serviceFee.value > 0
-              ? controller.serviceFee.value.toString()
-              : '',
+      text: controller.serviceFee.value > 0
+          ? controller.serviceFee.value.toString()
+          : '',
     );
 
     Get.dialog(
@@ -738,7 +1221,6 @@ class TransactionDetailView extends StatelessWidget {
   }
 
   void _showTaxDialog() {
-    final controller = Get.find<TransactionController>();
     final taxController = TextEditingController(
       text: controller.tax.value > 0 ? controller.tax.value.toString() : '',
     );
@@ -761,34 +1243,32 @@ class TransactionDetailView extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Nilai Pajak',
                 border: const OutlineInputBorder(),
-                prefixText:
-                    controller.taxType.value == 'percentage' ? '' : 'Rp ',
+                prefixText: controller.taxType.value == 'percentage'
+                    ? ''
+                    : 'Rp ',
                 suffixText: controller.taxType.value == 'percentage' ? '%' : '',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            Obx(
-              () => DropdownButtonFormField<String>(
-                value: controller.taxType.value,
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Pajak',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
-                  DropdownMenuItem(
-                    value: 'percentage',
-                    child: Text('Persentase'),
+            Obx(() =>
+                DropdownButtonFormField<String>(
+                  value: controller.taxType.value,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipe Pajak',
+                    border: OutlineInputBorder(),
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.taxType.value = value;
-                  }
-                },
-              ),
-            ),
+                  items: const [
+                    DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
+                    DropdownMenuItem(
+                        value: 'percentage', child: Text('Persentase')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.taxType.value = value;
+                    }
+                  },
+                )),
           ],
         ),
         actions: [
