@@ -3,6 +3,7 @@ import 'package:sadean/src/service/category_service.dart';
 import 'package:sadean/src/service/product_service.dart';
 import 'package:sadean/src/service/transaction_service.dart';
 import 'database_helper.dart';
+import 'income_expense_service.dart';
 
 class AppInitializationService {
   static Future<void> initialize() async {
@@ -13,6 +14,7 @@ class AppInitializationService {
     Get.put(CategoryService());
     Get.put(ProductService());
     Get.put(TransactionService());
+    Get.put(IncomeExpenseService());
 
     // Initialize sample data if empty (optional)
     await _initializeSampleData();

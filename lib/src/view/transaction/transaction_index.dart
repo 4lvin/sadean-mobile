@@ -76,7 +76,7 @@ class TransactionIndex extends StatelessWidget {
                           title: 'Pendapatan',
                           color: primaryColor.withOpacity(0.9),
                           textColor: Colors.white,
-                          onTap: () => Get.toNamed('/history'),
+                          onTap: () => Get.snackbar('Info', 'Fitur pengeluaran akan segera hadir'),
                         ),
                       ),
                     ],

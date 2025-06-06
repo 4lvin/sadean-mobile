@@ -4,20 +4,24 @@ import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 
 import '../../config/theme.dart';
+import '../../controllers/setting_controller.dart';
 import '../../models/transaction_model.dart';
+import '../../service/thermal_print_service.dart';
 
 class ReceiptView extends StatelessWidget {
   final Transaction transaction;
   final String customerName;
   final String phoneNumber;
 
-  const ReceiptView({
+   ReceiptView({
     super.key,
     required this.transaction,
     this.customerName = "Alvin",
     this.phoneNumber = "08573671088",
   });
 
+  final BluetoothPrintService _printService = BluetoothPrintService();
+  final SettingsController setController = Get.find<SettingsController>();
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -591,7 +595,7 @@ class ReceiptView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Get.back();
-              Get.toNamed('/settings');
+              _printTransaction(transaction);
             },
             child: const Text('Pengaturan'),
           ),
@@ -680,5 +684,40 @@ Catatan: ${transaction.notes}
     }
 
     return receipt;
+  }
+  void _printTransaction(Transaction transaction) async {
+    if (setController.printers.isEmpty) {
+      await _printService.startScan();
+    }
+
+    if (setController.selectedPrinterDevice.value != null) {
+      // _printService.selectDevice(_printService.devices.first);
+
+      try {
+        await setController.printTransaction(
+          customerName: "SADEAN",
+          customerLocation: "PANDAAN",
+          customerPhone: "085736710089",
+          dateTime: DateTime.now().toString(),
+          items: transaction.items,
+          subtotal: 'Rp ${transaction.subtotal.toString()}',
+          adminFee: 'Rp ${transaction.serviceFee.toString()}',
+          total: 'Rp ${transaction.totalAmount.toStringAsFixed(0)}',
+          payment: 'Rp ${transaction.paymentMethod.toString()}',
+          change: 'Rp ${transaction.changeAmount.toString()}',
+          status: 'LUNAS',
+          trxCode: 'TRX-${transaction.id}',
+        );
+
+        // Get.snackbar(
+        //   'Info',
+        //   'Struk transaksi ${transaction.id} berhasil dicetak',
+        // );
+      } catch (e) {
+        Get.snackbar('Error', e.toString());
+      }
+    } else {
+      Get.snackbar('Error', 'Tidak ditemukan printer Bluetooth');
+    }
   }
 }

@@ -5,13 +5,14 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "sadean_pos.db";
-  static const _databaseVersion = 2; // Incremented for payment support
+  static const _databaseVersion = 3; // Incremented for payment support
 
   // Table names
   static const String tableCategories = 'categories';
   static const String tableProducts = 'products';
   static const String tableTransactions = 'transactions';
   static const String tableTransactionItems = 'transaction_items';
+  static const String tableIncomeExpense = 'income_expense';
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();
@@ -109,6 +110,19 @@ class DatabaseHelper {
       )
     ''');
 
+    await db.execute('''
+  CREATE TABLE $tableIncomeExpense (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+    amount REAL NOT NULL,
+    payment_method TEXT NOT NULL DEFAULT 'cash',
+    notes TEXT,
+    date TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )
+''');
+
     // Create indexes for better performance
     await db.execute('CREATE INDEX idx_products_category_id ON $tableProducts (category_id)');
     await db.execute('CREATE INDEX idx_products_barcode ON $tableProducts (barcode)');
@@ -116,6 +130,9 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_transaction_items_transaction_id ON $tableTransactionItems (transaction_id)');
     await db.execute('CREATE INDEX idx_transaction_items_product_id ON $tableTransactionItems (product_id)');
     await db.execute('CREATE INDEX idx_transactions_date ON $tableTransactions (date)');
+    await db.execute('CREATE INDEX idx_income_expense_type ON $tableIncomeExpense (type)');
+    await db.execute('CREATE INDEX idx_income_expense_date ON $tableIncomeExpense (date)');
+
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -125,6 +142,26 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE $tableTransactions ADD COLUMN amount_paid REAL DEFAULT 0');
       await db.execute('ALTER TABLE $tableTransactions ADD COLUMN change_amount REAL DEFAULT 0');
       await db.execute('ALTER TABLE $tableTransactions ADD COLUMN payment_status TEXT DEFAULT "paid"');
+    }
+
+    if (oldVersion < 3) {
+      // Create income/expense table
+      await db.execute('''
+      CREATE TABLE $tableIncomeExpense (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+        amount REAL NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        notes TEXT,
+        date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+      // Create indexes
+      await db.execute('CREATE INDEX idx_income_expense_type ON $tableIncomeExpense (type)');
+      await db.execute('CREATE INDEX idx_income_expense_date ON $tableIncomeExpense (date)');
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/controllers/setting_controller.dart';
 
 class SettingView extends StatelessWidget {
@@ -12,7 +13,7 @@ class SettingView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text("Profil"),
-        backgroundColor: Colors.blue,
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -43,7 +44,7 @@ class SettingView extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.blue, Colors.blue.shade300],
+          colors: [primaryColor, secondaryColor],
         ),
       ),
       child: Padding(

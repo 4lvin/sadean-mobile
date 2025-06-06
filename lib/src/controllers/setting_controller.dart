@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:bluetooth_print_plus/bluetooth_print_plus.dart';
 import 'package:bluetooth_print_plus/src/enum_tool.dart' as bt;
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/routers/constant.dart';
 
@@ -16,6 +17,12 @@ class SettingsController extends GetxController {
   var userPhone = "+62 812 3456 7890".obs;
   var profileImage = "".obs;
 
+  // Secure Storage instance
+  static const _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(
+      encryptedSharedPreferences: true,
+    ),
+  );
 
   // Settings
   var isDarkMode = false.obs;
@@ -24,8 +31,8 @@ class SettingsController extends GetxController {
   var selectedCurrency = "IDR".obs;
   var selectedPaymentMethod = "Cash".obs;
   var selectedPrinter = "Tidak Ada".obs;
-  var printers = <BluetoothDevice>[].obs;  // daftar perangkat Bluetooth ditemukan
-  var selectedPrinterDevice = Rxn<BluetoothDevice>(); // device yang dipilih
+  var printers = <BluetoothDevice>[].obs;
+  var selectedPrinterDevice = Rxn<BluetoothDevice>();
   final EscCommand _esc = EscCommand();
 
   // Language options
@@ -41,7 +48,72 @@ class SettingsController extends GetxController {
   void onInit() {
     super.onInit();
     loadUserData();
+    loadSettings();
     scanPrinters();
+  }
+
+  // Load settings from secure storage
+  Future<void> loadSettings() async {
+    try {
+      final darkMode = await _storage.read(key: 'dark_mode');
+      if (darkMode != null) {
+        isDarkMode.value = darkMode == 'true';
+      }
+
+      final notification = await _storage.read(key: 'notification_enabled');
+      if (notification != null) {
+        isNotificationEnabled.value = notification == 'true';
+      }
+
+      final language = await _storage.read(key: 'selected_language');
+      if (language != null) {
+        selectedLanguage.value = language;
+      }
+
+      final currency = await _storage.read(key: 'selected_currency');
+      if (currency != null) {
+        selectedCurrency.value = currency;
+      }
+
+      final paymentMethod = await _storage.read(key: 'selected_payment_method');
+      if (paymentMethod != null) {
+        selectedPaymentMethod.value = paymentMethod;
+      }
+
+      final printer = await _storage.read(key: 'selected_printer');
+      if (printer != null) {
+        selectedPrinter.value = printer;
+      }
+
+      final printerAddress = await _storage.read(key: 'selected_printer_address');
+      if (printerAddress != null) {
+        // Try to find the saved printer in available devices
+        await scanPrinters();
+        selectedPrinterDevice.value = printers.firstWhereOrNull(
+              (device) => device.address == printerAddress,
+        );
+      }
+    } catch (e) {
+      print('Error loading settings: $e');
+    }
+  }
+
+  // Save settings to secure storage
+  Future<void> saveSettings() async {
+    try {
+      await _storage.write(key: 'dark_mode', value: isDarkMode.value.toString());
+      await _storage.write(key: 'notification_enabled', value: isNotificationEnabled.value.toString());
+      await _storage.write(key: 'selected_language', value: selectedLanguage.value);
+      await _storage.write(key: 'selected_currency', value: selectedCurrency.value);
+      await _storage.write(key: 'selected_payment_method', value: selectedPaymentMethod.value);
+      await _storage.write(key: 'selected_printer', value: selectedPrinter.value);
+
+      if (selectedPrinterDevice.value != null) {
+        await _storage.write(key: 'selected_printer_address', value: selectedPrinterDevice.value!.address ?? '');
+      }
+    } catch (e) {
+      print('Error saving settings: $e');
+    }
   }
 
   void loadUserData() {
@@ -69,10 +141,12 @@ class SettingsController extends GetxController {
   void toggleDarkMode() {
     isDarkMode.value = !isDarkMode.value;
     Get.changeThemeMode(isDarkMode.value ? ThemeMode.dark : ThemeMode.light);
+    saveSettings();
   }
 
   void toggleNotification() {
     isNotificationEnabled.value = !isNotificationEnabled.value;
+    saveSettings();
     Get.snackbar(
       "Notifikasi",
       isNotificationEnabled.value ? "Notifikasi diaktifkan" : "Notifikasi dinonaktifkan",
@@ -82,7 +156,7 @@ class SettingsController extends GetxController {
 
   void updateLanguage(String language) {
     selectedLanguage.value = language;
-    // Implement language change logic here
+    saveSettings();
     Get.snackbar(
       "Bahasa",
       "Bahasa diubah ke $language",
@@ -92,6 +166,7 @@ class SettingsController extends GetxController {
 
   void updateCurrency(String currency) {
     selectedCurrency.value = currency;
+    saveSettings();
     Get.snackbar(
       "Mata Uang",
       "Mata uang diubah ke $currency",
@@ -101,14 +176,13 @@ class SettingsController extends GetxController {
 
   void updatePaymentMethod(String method) {
     selectedPaymentMethod.value = method;
+    saveSettings();
     Get.snackbar(
       "Metode Pembayaran",
       "Metode pembayaran diubah ke $method",
       snackPosition: SnackPosition.TOP,
     );
   }
-
-
 
   Future<void> scanPrinters() async {
     printers.clear();
@@ -123,7 +197,7 @@ class SettingsController extends GetxController {
     selectedPrinterDevice.value =
         printers.firstWhereOrNull((d) => d.name == printerName);
     connectSelectedPrinter();
-    // Bisa juga simpan ke storage jika mau persistent
+    saveSettings();
   }
 
   Future<bool> connectSelectedPrinter() async {
@@ -135,12 +209,40 @@ class SettingsController extends GetxController {
     await BluetoothPrintPlus.disconnect();
   }
 
+  // Helper function to format currency
+  String formatCurrency(double amount) {
+    if (selectedCurrency.value == 'IDR') {
+      return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+    } else if (selectedCurrency.value == 'USD') {
+      return '\$${amount.toStringAsFixed(2)}';
+    } else if (selectedCurrency.value == 'MYR') {
+      return 'RM${amount.toStringAsFixed(2)}';
+    }
+    return amount.toStringAsFixed(2);
+  }
+
+  // Helper function to create a properly spaced line
+  String createSpacedLine(String left, String right, int totalWidth) {
+    if (left.length + right.length >= totalWidth) {
+      return left + right;
+    }
+    int spaces = totalWidth - left.length - right.length;
+    return left + (' ' * spaces) + right;
+  }
+
+  // Helper function to center text
+  String centerText(String text, int width) {
+    if (text.length >= width) return text;
+    int spaces = (width - text.length) ~/ 2;
+    return (' ' * spaces) + text + (' ' * spaces);
+  }
+
   Future<void> printTransaction({
     required String customerName,
     required String customerLocation,
     required String customerPhone,
     required String dateTime,
-    required List<TransactionItem> items, // {'name': ..., 'qty': ..., 'price': ..., 'total': ...}
+    required List<TransactionItem> items,
     required String subtotal,
     required String adminFee,
     required String total,
@@ -151,101 +253,200 @@ class SettingsController extends GetxController {
   }) async {
     try {
       // if (selectedPrinterDevice.value == null) {
-      //   throw Exception('No Bluetooth device selected');
+      //   Get.snackbar(
+      //     "Error",
+      //     "Printer belum dipilih",
+      //     snackPosition: SnackPosition.TOP,
+      //     backgroundColor: Colors.red,
+      //     colorText: Colors.white,
+      //   );
+      //   return;
       // }
       //
-      // final connected = await BluetoothPrintService().connect();
-      // await Future.delayed(Duration(milliseconds: 500));
+      // // Try to connect to printer
+      // final connected = await connectSelectedPrinter();
       // if (!connected) {
-      //   throw Exception('Failed to connect to Bluetooth device');
+      //   Get.snackbar(
+      //     "Error",
+      //     "Gagal terhubung ke printer",
+      //     snackPosition: SnackPosition.TOP,
+      //     backgroundColor: Colors.red,
+      //     colorText: Colors.white,
+      //   );
+      //   return;
       // }
+
       await _esc.cleanCommand();
 
-      // Header
       const int lineWidth = 32;
+      const String separator = '---------------------------------';
 
-      await _esc.text(content: customerName, alignment: bt.Alignment.center, style: EscTextStyle.bold, fontSize: EscFontSize.size2);
-      await _esc.text(content: "");
-      await _esc.text(content: customerLocation, alignment: bt.Alignment.center);
-      await _esc.text(content: "");
-      await _esc.text(content: customerPhone, alignment: bt.Alignment.center);
-      await _esc.text(content: "");
-      await _esc.text(content: 'Tanggal: $dateTime', alignment: bt.Alignment.center);
-      await _esc.text(content: "");
-      await _esc.text(content: '-' * lineWidth);
+      // Header - Store Info
+      await _esc.text(
+        content: centerText(customerName, lineWidth),
+        alignment: bt.Alignment.center,
+        style: EscTextStyle.bold,
+        fontSize: EscFontSize.size2,
+      );
+      await _esc.text(content: '');
+      await _esc.text(
+        content: centerText(customerLocation, lineWidth),
+        alignment: bt.Alignment.center,
+      );
+      await _esc.text(
+        content: centerText(customerPhone, lineWidth),
+        alignment: bt.Alignment.center,
+      );
+      await _esc.text(content: '');
+      await _esc.text(content: separator);
 
-// Items
+      // Transaction Info
+      await _esc.text(
+        content: centerText('NOTA TRANSAKSI', lineWidth),
+        alignment: bt.Alignment.center,
+        style: EscTextStyle.bold,
+      );
+      await _esc.text(content: '');
+      await _esc.text(content: createSpacedLine('Tanggal', dateTime.split(' ')[0], lineWidth));
+      await _esc.text(content: createSpacedLine('Waktu', dateTime.split(' ')[1], lineWidth));
+      await _esc.text(
+        content: centerText('No. Transaksi', lineWidth),
+        alignment: bt.Alignment.center,
+        style: EscTextStyle.bold,
+        fontSize: EscFontSize.size2,
+      );
+      await _esc.text(content: '');
+      await _esc.text(
+        content: centerText(trxCode, lineWidth),
+        alignment: bt.Alignment.center,
+      );
+      await _esc.text(content: separator);
+      await _esc.text(content: '');
+      // Items Header
+      await _esc.text(
+        content: 'ITEM PEMBELIAN',
+        style: EscTextStyle.bold,
+      );
+      await _esc.text(content: '');
+      await _esc.text(content: '');
+
+      // Items
       for (var item in items) {
         final name = item.productName;
         final qty = item.quantity;
         final price = item.costPrice;
-        final total = item.totalPrice;
+        final totalPrice = item.totalPrice;
 
-        // Batasi nama produk jika terlalu panjang
-        final truncatedName = name.length > lineWidth ? name.substring(0, lineWidth) : name;
+        // Product name (truncate if too long)
+        String displayName = name.length > lineWidth ? name.substring(0, lineWidth - 3) + '...' : name;
+        await _esc.text(content: displayName);
 
-        await _esc.text(content: truncatedName);
-        await _esc.text(content: "");
-        // Format kuantitas dan total
-        final left = '$qty x $price';
-        final right = total.toString();
-        final spaces = lineWidth - left.length - right.length;
-        await _esc.text(content: '$left${' ' * spaces}$right');
+        // Quantity x Price = Total
+        String qtyPriceText = '${qty}x${formatCurrency(price)}';
+        String totalText = formatCurrency(totalPrice);
+        await _esc.text(content: createSpacedLine(qtyPriceText, totalText, lineWidth));
+        await _esc.text(content: '');
       }
 
-      await _esc.text(content: '-' * lineWidth);
+      await _esc.text(content: separator);
 
-// Ringkasan
-      String padLine(String label, String value, {bool bold = false}) {
-        final pad = lineWidth - label.length - value.length;
-        final text = '$label${' ' * pad}$value';
-        return text;
-      }
+      // Summary
+      double subtotalAmount = double.tryParse(subtotal.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+      double adminFeeAmount = double.tryParse(adminFee.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+      double totalAmount = double.tryParse(total.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+      double paymentAmount = double.tryParse(payment.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
+      double changeAmount = double.tryParse(change.replaceAll(RegExp(r'[^\d.]'), '')) ?? 0;
 
-      await _esc.text(content: padLine('Subtotal', subtotal));
-      await _esc.text(content: "");
-      await _esc.text(content: padLine('Biaya Admin', adminFee));
-      await _esc.text(content: "");
-      await _esc.text(content: padLine('Total Akhir', total), style: EscTextStyle.bold);
-      await _esc.text(content: "");
-      await _esc.text(content: '-' * lineWidth);
-
-// Pembayaran
-      await _esc.text(content: padLine('Pembayaran', payment));
-      await _esc.text(content: "");
-      await _esc.text(content: padLine('Kembali', change));
-
-      await _esc.text(content: '', alignment: bt.Alignment.center); // Baris kosong
-
-// Status
+      await _esc.text(content: createSpacedLine('Subtotal', formatCurrency(subtotalAmount), lineWidth));
+      await _esc.text(content: createSpacedLine('Biaya Admin', formatCurrency(adminFeeAmount), lineWidth));
+      await _esc.text(content: '');
       await _esc.text(
-        content: status,
+        content: createSpacedLine('TOTAL', formatCurrency(totalAmount), lineWidth),
+        style: EscTextStyle.bold,
+        fontSize: EscFontSize.size2,
+      );
+      await _esc.text(content: separator);
+
+      // Payment Info
+      await _esc.text(content: createSpacedLine('Pembayaran', formatCurrency(paymentAmount), lineWidth));
+      await _esc.text(content: createSpacedLine('Kembali', formatCurrency(changeAmount), lineWidth));
+      await _esc.text(content: '');
+
+      // Payment Method
+      await _esc.text(
+        content: centerText(selectedPaymentMethod.value.toUpperCase(), lineWidth),
+        alignment: bt.Alignment.center,
+        style: EscTextStyle.bold,
+      );
+      await _esc.text(content: '');
+
+      // Status
+      await _esc.text(
+        content: centerText(status.toUpperCase(), lineWidth),
         alignment: bt.Alignment.center,
         style: EscTextStyle.bold,
         fontSize: EscFontSize.size2,
       );
 
-      await _esc.text(content: '', alignment: bt.Alignment.center); // Baris kosong
-      await _esc.text(content: 'Tunai', alignment: bt.Alignment.center);
-      await _esc.text(content: trxCode, alignment: bt.Alignment.center);
-      await _esc.text(content: dateTime, alignment: bt.Alignment.center);
+      await _esc.text(content: '');
+      await _esc.text(content: separator);
 
-// Extra blank lines untuk spasi bawah
+      // Footer
+      await _esc.text(
+        content: centerText('TERIMA KASIH', lineWidth),
+        alignment: bt.Alignment.center,
+        style: EscTextStyle.bold,
+      );
+      await _esc.text(
+        content: centerText('ATAS KUNJUNGAN ANDA', lineWidth),
+        alignment: bt.Alignment.center,
+      );
       await _esc.text(content: '');
       await _esc.text(content: '');
+      await _esc.text(content: '');
+
+      // Print the receipt
       await _esc.print();
-
 
       final cmd = await _esc.getCommand();
       if (cmd != null) {
         await BluetoothPrintPlus.write(cmd);
+        Get.snackbar(
+          "Berhasil",
+          "Struk berhasil dicetak",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
       }
 
-    }catch (e) {
-      print("Reconnect and retry printing...");
-      await BluetoothPrintPlus.connect(selectedPrinterDevice.value!);
-      await Future.delayed(Duration(milliseconds: 500));
-      // await BluetoothPrintPlus.write(cmd);
+    } catch (e) {
+      print("Print error: $e");
+      // Try to reconnect and retry
+      try {
+        await BluetoothPrintPlus.connect(selectedPrinterDevice.value!);
+        await Future.delayed(Duration(milliseconds: 1000));
+
+        final cmd = await _esc.getCommand();
+        if (cmd != null) {
+          await BluetoothPrintPlus.write(cmd);
+          Get.snackbar(
+            "Berhasil",
+            "Struk berhasil dicetak setelah reconnect",
+            snackPosition: SnackPosition.TOP,
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+          );
+        }
+      } catch (retryError) {
+        Get.snackbar(
+          "Error",
+          "Gagal mencetak struk: $retryError",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
     }
   }
 
@@ -272,8 +473,10 @@ class SettingsController extends GetxController {
             child: Text("Batal"),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Get.back();
+              // Clear secure storage on logout
+              await _storage.deleteAll();
               // Clear user data and navigate to login
               Get.offAllNamed(loginRoute);
               Get.snackbar(
@@ -288,5 +491,12 @@ class SettingsController extends GetxController {
         ],
       ),
     );
+  }
+
+  @override
+  void onClose() {
+    // Disconnect printer when controller is disposed
+    disconnectPrinter();
+    super.onClose();
   }
 }

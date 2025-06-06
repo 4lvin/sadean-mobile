@@ -104,8 +104,10 @@ class TransactionService extends GetxService {
     }
 
     try {
-      return await _dbHelper.transaction((txn) async {
-        // Validate stock availability
+      // PERBAIKAN: Gunakan database.transaction yang benar
+      final database = await _dbHelper.database;
+      return await database.transaction((txn) async {
+        // Validate stock availability - GUNAKAN TXN
         for (final item in items) {
           final productResult = await txn.query(
             DatabaseHelper.tableProducts,
@@ -138,7 +140,7 @@ class TransactionService extends GetxService {
         final transactionId = _generateTransactionId();
         final now = DateTime.now();
 
-        // Insert transaction with payment information
+        // Insert transaction with payment information - GUNAKAN TXN
         await txn.insert(DatabaseHelper.tableTransactions, {
           'id': transactionId,
           'date': now.toIso8601String(),
@@ -160,7 +162,7 @@ class TransactionService extends GetxService {
           'updated_at': now.toIso8601String(),
         });
 
-        // Insert transaction items and update product stock
+        // Insert transaction items and update product stock - GUNAKAN TXN
         for (final item in items) {
           // Insert transaction item
           await txn.insert(DatabaseHelper.tableTransactionItems, {
@@ -194,7 +196,7 @@ class TransactionService extends GetxService {
             whereArgs: [item.productId],
           );
 
-          // Update category sold count
+          // Update category sold count - PERBAIKAN: Gunakan txn
           await _updateCategorySoldCount(product['category_id'] as String, txn);
         }
 
@@ -251,15 +253,30 @@ class TransactionService extends GetxService {
 
   Future<void> deleteTransaction(String id) async {
     try {
-      await _dbHelper.transaction((txn) async {
-        // Get transaction items to restore stock
-        final items = await _getTransactionItems(id);
+      // PERBAIKAN: Gunakan database.transaction yang benar
+      final database = await _dbHelper.database;
+      await database.transaction((txn) async {
+        // Get transaction items to restore stock - GUNAKAN TXN untuk query
+        final itemMaps = await txn.query(
+          DatabaseHelper.tableTransactionItems,
+          where: 'transaction_id = ?',
+          whereArgs: [id],
+        );
 
-        if (items.isEmpty) {
+        if (itemMaps.isEmpty) {
           throw Exception('Transaksi tidak ditemukan');
         }
 
-        // Restore product stock and sold count
+        // Convert maps to TransactionItem objects
+        final items = itemMaps.map((map) => TransactionItem(
+          productId: map['product_id'] as String,
+          productName: map['product_name'] as String,
+          quantity: map['quantity'] as int,
+          unitPrice: (map['unit_price'] as num?)?.toDouble() ?? 0.0,
+          costPrice: (map['cost_price'] as num?)?.toDouble() ?? 0.0,
+        )).toList();
+
+        // Restore product stock and sold count - GUNAKAN TXN
         for (final item in items) {
           final productResult = await txn.query(
             DatabaseHelper.tableProducts,
@@ -283,19 +300,19 @@ class TransactionService extends GetxService {
               whereArgs: [item.productId],
             );
 
-            // Update category sold count
+            // Update category sold count - GUNAKAN TXN
             await _updateCategorySoldCount(product['category_id'] as String, txn);
           }
         }
 
-        // Delete transaction items first (foreign key constraint)
+        // Delete transaction items first (foreign key constraint) - GUNAKAN TXN
         await txn.delete(
           DatabaseHelper.tableTransactionItems,
           where: 'transaction_id = ?',
           whereArgs: [id],
         );
 
-        // Delete transaction
+        // Delete transaction - GUNAKAN TXN
         await txn.delete(
           DatabaseHelper.tableTransactions,
           where: 'id = ?',
@@ -571,7 +588,6 @@ class TransactionService extends GetxService {
     }
   }
 
-  // New method to get payment summary
   Future<Map<String, dynamic>> getPaymentSummary({
     DateTime? startDate,
     DateTime? endDate,
@@ -624,7 +640,6 @@ class TransactionService extends GetxService {
     }
   }
 
-  // New method to update transaction status
   Future<void> updateTransactionStatus({
     required String transactionId,
     required String status,
@@ -642,17 +657,14 @@ class TransactionService extends GetxService {
     }
   }
 
-  // New method to get pending transactions
   Future<List<Transaction>> getPendingTransactions() async {
     return getTransactionsByStatus('pending');
   }
 
-  // New method to get completed transactions
   Future<List<Transaction>> getCompletedTransactions() async {
     return getTransactionsByStatus('paid');
   }
 
-  // New method to get cancelled transactions
   Future<List<Transaction>> getCancelledTransactions() async {
     return getTransactionsByStatus('cancelled');
   }
@@ -679,8 +691,10 @@ class TransactionService extends GetxService {
     }
   }
 
+  // PERBAIKAN: Method ini harus menggunakan parameter txn yang diterima
   Future<void> _updateCategorySoldCount(String categoryId, sql.Transaction txn) async {
     try {
+      // GUNAKAN TXN untuk semua operasi database dalam method ini
       final soldResult = await txn.rawQuery(
         'SELECT COALESCE(SUM(sold_count), 0) as total_sold FROM ${DatabaseHelper.tableProducts} WHERE category_id = ?',
         [categoryId],
