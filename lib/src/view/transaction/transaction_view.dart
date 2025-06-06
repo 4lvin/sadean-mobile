@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/config/assets.dart';
@@ -175,185 +177,194 @@ class TransactionView extends StatelessWidget {
   Widget _buildProductCard(Product product) {
     final storage = Get.find<ProductService>();
 
-    return Obx(()=>Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => controller.quickAddProduct(product),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              // Product Image
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(8),
+    return Obx(
+      () => Card(
+        margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: InkWell(
+          onTap: () => controller.quickAddProduct(product),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                // Product Image
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child:
+                        product.imageUrl != null
+                            ? Image.file(
+                              File(product.imageUrl!),
+                              fit: BoxFit.cover,
+                              errorBuilder:
+                                  (_, __, ___) => Icon(
+                                    Icons.broken_image,
+                                    size: 50,
+                                    color: Colors.grey[400],
+                                  ),
+                            )
+                            : Icon(Icons.image, color: Colors.grey[400]),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child:
-                      product.imageUrl != null
-                          ? Image.memory(
-                            storage.base64ToImage(product.imageUrl!)!,
-                            fit: BoxFit.cover,
-                          )
-                          : Icon(Icons.image, color: Colors.grey[400]),
-                ),
-              ),
 
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Product Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _getCategoryName(product.categoryId),
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          'Rp ${controller.formatPrice(product.sellingPrice)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${product.stock} ${product.unit}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color:
-                                product.stock <= product.minStock
-                                    ? Colors.red
-                                    : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Add Button / Quantity Controls
-              Column(
-                children: [
-                  if (controller.getCartQuantity(product.id) > 0) ...[
-                    // Quantity Display
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${controller.getCartQuantity(product.id)}',
+                // Product Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        product.name,
                         style: const TextStyle(
-                          color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: 16,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    // Quantity Controls Row
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Decrease Button
-                        Material(
-                          color: Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(6),
-                            onTap:
-                                () => controller.updateCartItemQuantity(
-                                  product.id,
-                                  controller.getCartQuantity(product.id) - 1,
-                                ),
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              child: const Icon(
-                                Icons.remove,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getCategoryName(product.categoryId),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            'Rp ${controller.formatPrice(product.sellingPrice)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
                             ),
                           ),
+                          const Spacer(),
+                          Text(
+                            '${product.stock} ${product.unit}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color:
+                                  product.stock <= product.minStock
+                                      ? Colors.red
+                                      : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Add Button / Quantity Controls
+                Column(
+                  children: [
+                    if (controller.getCartQuantity(product.id) > 0) ...[
+                      // Quantity Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
                         ),
-
-                        const SizedBox(width: 8),
-
-                        // Increase Button
-                        Material(
+                        decoration: BoxDecoration(
                           color: primaryColor,
-                          borderRadius: BorderRadius.circular(6),
-                          child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${controller.getCartQuantity(product.id)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Quantity Controls Row
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Decrease Button
+                          Material(
+                            color: Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(6),
-                            onTap:
-                                product.stock > controller.getCartQuantity(product.id)
-                                    ? () => controller.addToCart(product)
-                                    : null,
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              child: const Icon(
-                                Icons.add,
-                                size: 16,
-                                color: Colors.white,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap:
+                                  () => controller.updateCartItemQuantity(
+                                    product.id,
+                                    controller.getCartQuantity(product.id) - 1,
+                                  ),
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                child: const Icon(
+                                  Icons.remove,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ] else ...[
-                    // Add Button for new items
-                    Material(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(8),
-                      child: InkWell(
+
+                          const SizedBox(width: 8),
+
+                          // Increase Button
+                          Material(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(6),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap:
+                                  product.stock >
+                                          controller.getCartQuantity(product.id)
+                                      ? () => controller.addToCart(product)
+                                      : null,
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                child: const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      // Add Button for new items
+                      Material(
+                        color: primaryColor,
                         borderRadius: BorderRadius.circular(8),
-                        onTap:
-                            product.stock > 0
-                                ? () => controller.addToCart(product)
-                                : null,
-                        child: Container(
-                          width: 60,
-                          height: 36,
-                          child: const Icon(Icons.add, color: Colors.white),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap:
+                              product.stock > 0
+                                  ? () => controller.addToCart(product)
+                                  : null,
+                          child: Container(
+                            width: 60,
+                            height: 36,
+                            child: const Icon(Icons.add, color: Colors.white),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildEmptyState() {
@@ -421,16 +432,24 @@ class TransactionView extends StatelessWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Obx(() => Text(
-                              "KERANJANG (${controller.cartItemCount.value})",
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            )),
+                            Obx(
+                              () => Text(
+                                "KERANJANG (${controller.cartItemCount.value})",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
                             Row(
                               children: [
                                 // Adjustment Button
                                 IconButton(
-                                  icon: const Icon(Icons.tune, color: Colors.blue),
-                                  onPressed: () => controller.showAdjustmentsDialog(),
+                                  icon: const Icon(
+                                    Icons.tune,
+                                    color: Colors.blue,
+                                  ),
+                                  onPressed:
+                                      () => controller.showAdjustmentsDialog(),
                                   tooltip: 'Pengaturan Transaksi',
                                 ),
                                 IconButton(
@@ -450,31 +469,26 @@ class TransactionView extends StatelessWidget {
 
                     // Cart Items
                     Obx(
-                          () => SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                            final item = controller.cartItems[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              child: _buildCartItem(item),
-                            );
-                          },
-                          childCount: controller.cartItems.length,
-                        ),
+                      () => SliverList(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = controller.cartItems[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildCartItem(item),
+                          );
+                        }, childCount: controller.cartItems.length),
                       ),
                     ),
 
                     // Add some space before total summary
-                    const SliverToBoxAdapter(
-                      child: SizedBox(height: 16),
-                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 16)),
                   ],
                 ),
               ),
 
               // Enhanced Total Summary (Fixed at bottom)
               Obx(
-                    () => Container(
+                () => Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     border: Border(
@@ -484,34 +498,47 @@ class TransactionView extends StatelessWidget {
                   child: Column(
                     children: [
                       // Detailed breakdown
-                      _buildSummaryRow('Subtotal', controller.cartSubtotal.value),
+                      _buildSummaryRow(
+                        'Subtotal',
+                        controller.cartSubtotal.value,
+                      ),
 
                       // Show adjustments if any
                       if (controller.discount.value > 0)
                         _buildSummaryRow(
                           'Diskon ${controller.discountType.value == 'percentage' ? '(${controller.discount.value}%)' : ''}',
                           controller.discountType.value == 'percentage'
-                              ? -(controller.cartSubtotal.value * (controller.discount.value / 100))
+                              ? -(controller.cartSubtotal.value *
+                                  (controller.discount.value / 100))
                               : -controller.discount.value,
                           isNegative: true,
                         ),
 
                       if (controller.serviceFee.value > 0)
-                        _buildSummaryRow('Biaya Layanan', controller.serviceFee.value),
+                        _buildSummaryRow(
+                          'Biaya Layanan',
+                          controller.serviceFee.value,
+                        ),
 
                       if (controller.shippingCost.value > 0)
-                        _buildSummaryRow('Biaya Pengiriman', controller.shippingCost.value),
+                        _buildSummaryRow(
+                          'Biaya Pengiriman',
+                          controller.shippingCost.value,
+                        ),
 
                       if (controller.tax.value > 0)
                         _buildSummaryRow(
                           'Pajak ${controller.taxType.value == 'percentage' ? '(${controller.tax.value}%)' : ''}',
                           controller.taxType.value == 'percentage'
                               ? (controller.cartSubtotal.value -
-                              (controller.discountType.value == 'percentage'
-                                  ? controller.cartSubtotal.value * (controller.discount.value / 100)
-                                  : controller.discount.value) +
-                              controller.serviceFee.value +
-                              controller.shippingCost.value) * (controller.tax.value / 100)
+                                      (controller.discountType.value ==
+                                              'percentage'
+                                          ? controller.cartSubtotal.value *
+                                              (controller.discount.value / 100)
+                                          : controller.discount.value) +
+                                      controller.serviceFee.value +
+                                      controller.shippingCost.value) *
+                                  (controller.tax.value / 100)
                               : controller.tax.value,
                         ),
 
@@ -551,13 +578,13 @@ class TransactionView extends StatelessWidget {
   }
 
   Widget _buildSummaryRow(
-      String label,
-      double amount, {
-        bool isNegative = false,
-        bool isBold = false,
-        double fontSize = 14,
-        Color? color,
-      }) {
+    String label,
+    double amount, {
+    bool isNegative = false,
+    bool isBold = false,
+    double fontSize = 14,
+    Color? color,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -576,9 +603,11 @@ class TransactionView extends StatelessWidget {
             style: TextStyle(
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               fontSize: fontSize,
-              color: isNegative
-                  ? Colors.red
-                  : (color ?? (isBold ? Colors.black : Colors.grey.shade700)),
+              color:
+                  isNegative
+                      ? Colors.red
+                      : (color ??
+                          (isBold ? Colors.black : Colors.grey.shade700)),
             ),
           ),
         ],
@@ -586,7 +615,7 @@ class TransactionView extends StatelessWidget {
     );
   }
 
-// Enhanced Cart Summary Bar
+  // Enhanced Cart Summary Bar
   Widget _buildCartSummaryBar() {
     return Container(
       decoration: const BoxDecoration(
@@ -632,7 +661,7 @@ class TransactionView extends StatelessWidget {
           // Total & Process Button
           Expanded(
             child: Obx(
-                  () => ElevatedButton(
+              () => ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -640,36 +669,38 @@ class TransactionView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: controller.isProcessingTransaction.value
-                    ? null
-                    : () => Get.to(() => TransactionDetailView()),
-                child: controller.isProcessingTransaction.value
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Rp ${controller.formatPrice(controller.cartTotal.value)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    // Show if there are adjustments
-                    if (controller.discount.value > 0 ||
-                        controller.serviceFee.value > 0 ||
-                        controller.shippingCost.value > 0 ||
-                        controller.tax.value > 0)
-                      Text(
-                        'Subtotal: Rp ${controller.formatPrice(controller.cartSubtotal.value)}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                onPressed:
+                    controller.isProcessingTransaction.value
+                        ? null
+                        : () => Get.to(() => TransactionDetailView()),
+                child:
+                    controller.isProcessingTransaction.value
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            // Show if there are adjustments
+                            if (controller.discount.value > 0 ||
+                                controller.serviceFee.value > 0 ||
+                                controller.shippingCost.value > 0 ||
+                                controller.tax.value > 0)
+                              Text(
+                                'Subtotal: Rp ${controller.formatPrice(controller.cartSubtotal.value)}',
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -677,7 +708,6 @@ class TransactionView extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildCartItem(TransactionItem item) {
     final product = controller.products.firstWhere(

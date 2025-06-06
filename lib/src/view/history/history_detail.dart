@@ -576,6 +576,7 @@ class TransactionDetailView extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade300),
           ),
           child: TextField(
+            controller: controller.totalAmount,
             decoration: const InputDecoration(
               labelText: 'Masukkan nominal',
               border: InputBorder.none,
@@ -604,22 +605,21 @@ class TransactionDetailView extends StatelessWidget {
         const SizedBox(height: 8),
 
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: _buildQuickPaymentButton('0%', 0),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildQuickPaymentButton('25%', 0.25),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildQuickPaymentButton('50%', 0.5),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildQuickPaymentButton('100%', 1.0),
-            ),
+            // Expanded(
+            //   child: _buildQuickPaymentButton('0%', 0),
+            // ),
+            // const SizedBox(width: 8),
+            // Expanded(
+            //   child: _buildQuickPaymentButton('25%', 0.25),
+            // ),
+            // const SizedBox(width: 8),
+            // Expanded(
+            //   child: _buildQuickPaymentButton('50%', 0.5),
+            // ),
+            // const SizedBox(width: 8),
+            _buildQuickPaymentButton('100%', 1.0),
           ],
         ),
 
@@ -739,24 +739,13 @@ class TransactionDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickPaymentButton(String label, double percentage) {
+  Widget _buildQuickPaymentButton(String label, double multiplier) {
     return Obx(() {
-      // Calculate expected amount for this button
-      double expectedAmount = 0;
-      if (percentage == 0) {
-        expectedAmount = 0;
-      } else if (percentage == 0.25) {
-        expectedAmount = controller.cartTotal.value * 1.25;
-      } else if (percentage == 0.5) {
-        expectedAmount = controller.cartTotal.value * 1.5;
-      } else if (percentage == 1.0) {
-        expectedAmount = controller.cartTotal.value;
-      }
-
-      // Check if this button is selected (with small tolerance for floating point comparison)
-      final isSelected = (controller.amountPaid.value - expectedAmount).abs() < 0.01;
+      final quickAmount = (controller.cartTotal.value * multiplier).ceilToDouble();
+      final isSelected = (controller.amountPaid.value - quickAmount).abs() < 0.01;
 
       return Container(
+        width: 100,
         decoration: BoxDecoration(
           color: isSelected ? primaryColor : Colors.grey.shade200,
           borderRadius: BorderRadius.circular(8),
@@ -766,15 +755,7 @@ class TransactionDetailView extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: () {
-              if (percentage == 0) {
-                controller.setAmountPaid(0);
-              } else if (percentage == 0.25) {
-                controller.setQuickPayment(1.25);
-              } else if (percentage == 0.5) {
-                controller.setQuickPayment(1.5);
-              } else if (percentage == 1.0) {
-                controller.setQuickPayment(1.0);
-              }
+              controller.setQuickPayment(multiplier);
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -793,6 +774,7 @@ class TransactionDetailView extends StatelessWidget {
       );
     });
   }
+
 
   Widget _buildOrderItem(TransactionItem item) {
     return Padding(

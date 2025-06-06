@@ -14,7 +14,7 @@ class AppInitializationService {
     Get.put(CategoryService());
     Get.put(ProductService());
     Get.put(TransactionService());
-    Get.put(IncomeExpenseService());
+    Get.put<IncomeExpenseService>(IncomeExpenseService(), permanent: true);
 
     // Initialize sample data if empty (optional)
     await _initializeSampleData();

@@ -6,7 +6,7 @@ import '../../config/theme.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
-import '../../service/secure_storage_service.dart';
+
 
 class ProductDetailView extends StatelessWidget {
   final ProductController controller = Get.find<ProductController>();
@@ -16,7 +16,6 @@ class ProductDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final storage = Get.find<SecureStorageService>();
 
     return Scaffold(
       appBar: AppBar(
@@ -59,9 +58,10 @@ class ProductDetailView extends StatelessWidget {
                   child: product.imageUrl != null
                       ? Hero(
                     tag: 'product-hero-${product.id}',
-                    child: Image.memory(
-                      storage.base64ToImage(product.imageUrl)!,
+                    child: Image.file(
+                      File(product.imageUrl!),
                       fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 50, color: Colors.grey[400]),
                     ),
                   )
                       : Icon(

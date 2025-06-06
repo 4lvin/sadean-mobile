@@ -54,6 +54,7 @@ class TransactionController extends GetxController {
 
   // Search controller
   final TextEditingController searchController = TextEditingController();
+  final TextEditingController totalAmount = TextEditingController();
 
   @override
   void onInit() {
@@ -314,12 +315,16 @@ class TransactionController extends GetxController {
   }
 
   void setQuickPayment(double multiplier) {
-    if (multiplier == 0) {
-      amountPaid.value = 0;
-    } else {
-      final quickAmount = (cartTotal.value * multiplier).ceilToDouble();
-      amountPaid.value = quickAmount;
+    double quickAmount = 0;
+    if (multiplier > 0) {
+      quickAmount = (cartTotal.value * multiplier).ceilToDouble();
     }
+
+    amountPaid.value = quickAmount;
+    totalAmount.text = quickAmount.toStringAsFixed(0);
+    totalAmount.selection = TextSelection.fromPosition(
+      TextPosition(offset: totalAmount.text.length),
+    );
   }
 
   void _calculateChange(double value) {
@@ -668,6 +673,7 @@ class TransactionController extends GetxController {
 
       // Clear cart after successful transaction
       clearCart();
+      loadInitialData();
 
       // Show success dialog with options
       _showTransactionSuccessDialog(transaction);

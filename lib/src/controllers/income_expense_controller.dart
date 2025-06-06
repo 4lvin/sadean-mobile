@@ -7,7 +7,7 @@ import '../models/income_expense_model.dart';
 import '../service/income_expense_service.dart';
 
 class IncomeExpenseController extends GetxController {
-  final IncomeExpenseService _service = Get.find<IncomeExpenseService>();
+  final IncomeExpenseService service = Get.find<IncomeExpenseService>();
 
   // Observables
   final RxList<IncomeExpense> allRecords = <IncomeExpense>[].obs;
@@ -54,9 +54,9 @@ class IncomeExpenseController extends GetxController {
     isLoading.value = true;
 
     try {
-      final all = await _service.getAllRecords();
-      final income = await _service.getAllIncome();
-      final expenses = await _service.getAllExpenses();
+      final all = await service.getAllRecords();
+      final income = await service.getAllIncome();
+      final expenses = await service.getAllExpenses();
 
       allRecords.assignAll(all);
       incomeRecords.assignAll(income);
@@ -71,7 +71,7 @@ class IncomeExpenseController extends GetxController {
   // Fetch statistics
   Future<void> fetchStatistics() async {
     try {
-      final stats = await _service.getStatistics(
+      final stats = await service.getStatistics(
         startDate: filterStartDate.value,
         endDate: filterEndDate.value,
       );
@@ -120,7 +120,7 @@ class IncomeExpenseController extends GetxController {
       final amount = double.parse(amountController.text);
       final date = useCustomDateTime.value ? selectedDateTime.value : DateTime.now();
 
-      await _service.addRecord(
+      await service.addRecord(
         type: selectedType.value,
         amount: amount,
         paymentMethod: selectedPaymentMethod.value,
@@ -156,7 +156,7 @@ class IncomeExpenseController extends GetxController {
       final amount = double.parse(amountController.text);
       final date = useCustomDateTime.value ? selectedDateTime.value : DateTime.now();
 
-      await _service.updateRecord(
+      await service.updateRecord(
         id: id,
         amount: amount,
         paymentMethod: selectedPaymentMethod.value,
@@ -181,7 +181,7 @@ class IncomeExpenseController extends GetxController {
   Future<void> deleteRecord(String id) async {
     try {
       isLoading.value = true;
-      await _service.deleteRecord(id);
+      await service.deleteRecord(id);
       await fetchAllRecords();
       await fetchStatistics();
       Get.snackbar('Sukses', 'Data berhasil dihapus');

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../config/theme.dart';
 import '../../controllers/history_controller.dart';
 import '../../models/transaction_model.dart';
+
 class TransactionDetail extends StatelessWidget {
   final Transaction transaction;
 
@@ -61,38 +62,12 @@ class TransactionDetail extends StatelessWidget {
                         icon: const Icon(Icons.more_vert, color: Colors.white),
                         onSelected: (value) {
                           switch (value) {
-                            case 'print':
-                              _printReceipt();
-                              break;
-                            case 'share':
-                              _shareTransaction();
-                              break;
                             case 'delete':
                               _confirmDelete(context);
                               break;
                           }
                         },
                         itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'print',
-                            child: Row(
-                              children: [
-                                Icon(Icons.print),
-                                SizedBox(width: 8),
-                                Text('Cetak Struk'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'share',
-                            child: Row(
-                              children: [
-                                Icon(Icons.share),
-                                SizedBox(width: 8),
-                                Text('Bagikan'),
-                              ],
-                            ),
-                          ),
                           const PopupMenuItem(
                             value: 'delete',
                             child: Row(
@@ -162,10 +137,20 @@ class TransactionDetail extends StatelessWidget {
                           _buildInfoRow('ID Transaksi', transaction.id),
                           _buildInfoRow('Tanggal', _formatDate(transaction.date)),
                           _buildInfoRow('Total Item', '${transaction.items.length} item'),
-                          _buildInfoRow('Total Amount', currencyFormat.format(transaction.totalAmount)),
+                          const Divider(height: 20),
+                          _buildInfoRow('Subtotal', currencyFormat.format(transaction.subtotal)),
+                          if (transaction.serviceFee! > 0)
+                            _buildInfoRow('Biaya Admin', currencyFormat.format(transaction.serviceFee)),
+                          if (transaction.tax != null && transaction.tax! > 0)
+                            _buildInfoRow('Pajak', currencyFormat.format(transaction.tax!)),
+                          if (transaction.shippingCost != null && transaction.shippingCost! > 0)
+                            _buildInfoRow('Ongkir', currencyFormat.format(transaction.shippingCost!)),
+                          const Divider(height: 20),
+                          _buildInfoRow('Total Bayar', currencyFormat.format(transaction.totalAmount),
+                              valueColor: Colors.blue[700], isBold: true),
                           _buildInfoRow('Modal', currencyFormat.format(transaction.costAmount)),
                           _buildInfoRow('Laba', currencyFormat.format(transaction.profit),
-                              valueColor: Colors.green),
+                              valueColor: Colors.green, isBold: true),
                         ],
                       ),
                     ),
@@ -247,33 +232,22 @@ class TransactionDetail extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _shareTransaction,
-                          icon: const Icon(Icons.share),
-                          label: const Text('Bagikan'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
+                  // Receipt Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showReceipt,
+                      icon: const Icon(Icons.receipt),
+                      label: const Text('Lihat Struk'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _printReceipt,
-                          icon: const Icon(Icons.print),
-                          label: const Text('Cetak'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -284,7 +258,7 @@ class TransactionDetail extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
+  Widget _buildInfoRow(String label, String value, {Color? valueColor, bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -294,13 +268,15 @@ class TransactionDetail extends StatelessWidget {
             label,
             style: TextStyle(
               color: Colors.grey[600],
+              fontWeight: isBold ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              fontWeight: FontWeight.bold,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               color: valueColor,
+              fontSize: isBold ? 16 : 14,
             ),
           ),
         ],
@@ -312,12 +288,12 @@ class TransactionDetail extends StatelessWidget {
     return DateFormat('dd MMMM yyyy, HH:mm').format(date);
   }
 
-  void _printReceipt() {
-    Get.snackbar('Info', 'Mencetak struk transaksi ${transaction.id}');
-  }
-
-  void _shareTransaction() {
-    Get.snackbar('Info', 'Membagikan detail transaksi ${transaction.id}');
+  void _showReceipt() {
+    Get.toNamed('/receipt', arguments: {
+      'transaction': transaction,
+      'customerName': 'Customer',
+      'phoneNumber': '08573671088',
+    });
   }
 
   void _confirmDelete(BuildContext context) {
@@ -354,4 +330,3 @@ class TransactionDetail extends StatelessWidget {
     }
   }
 }
-

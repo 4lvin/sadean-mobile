@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/config/theme.dart';
@@ -15,18 +17,19 @@ class ProductsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Produk'),
+        title: Text('Produk',style: TextStyle(color: Colors.white),),
+        backgroundColor: primaryColor,
         actions: [
           IconButton(
-            icon: Icon(Icons.search),
+            icon: Icon(Icons.search,color: Colors.white,),
             onPressed: () => _showSearchDialog(),
           ),
           IconButton(
-            icon: Icon(Icons.category),
+            icon: Icon(Icons.category,color: Colors.white,),
             onPressed: () => _showCategoryManagement(),
           ),
           Obx(() => IconButton(
-            icon: Icon(controller.isGridView.value ? Icons.view_list : Icons.grid_view),
+            icon: Icon(controller.isGridView.value ? Icons.view_list : Icons.grid_view,color: Colors.white,),
             tooltip: controller.isGridView.value ? 'Tampilkan sebagai List' : 'Tampilkan sebagai Grid',
             onPressed: () {
               controller.isGridView.value = !controller.isGridView.value;
@@ -111,10 +114,11 @@ class ProductsView extends StatelessWidget {
     final imageWidget = product.imageUrl != null
         ? Hero(
       tag: 'product-hero-${product.id}', // pastikan unik
-      child: Image.memory(
-        storage.base64ToImage(product.imageUrl)!,
+      child: Image.file(
+        File(product.imageUrl!),
         fit: BoxFit.cover,
-      ),
+        errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 50, color: Colors.grey[400]),
+      )
     ) : Icon(Icons.image, size: 50, color: Colors.grey[400]);
 
     return Card(

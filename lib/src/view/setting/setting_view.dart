@@ -128,20 +128,20 @@ class SettingView extends StatelessWidget {
                 "Atur preferensi aplikasi",
                     () => _showSettingsDialog(context),
               ),
-              _buildMenuTile(
-                context,
-                Icons.currency_exchange,
-                "Satuan",
-                "Pilih mata uang: ${controller.selectedCurrency.value}",
-                    () => _showCurrencyDialog(context),
-              ),
-              _buildMenuTile(
-                context,
-                Icons.payment,
-                "Jenis Pembayaran",
-                "Metode: ${controller.selectedPaymentMethod.value}",
-                    () => _showPaymentMethodDialog(context),
-              ),
+              // _buildMenuTile(
+              //   context,
+              //   Icons.currency_exchange,
+              //   "Satuan",
+              //   "Pilih mata uang: ${controller.selectedCurrency.value}",
+              //       () => _showCurrencyDialog(context),
+              // ),
+              // _buildMenuTile(
+              //   context,
+              //   Icons.payment,
+              //   "Jenis Pembayaran",
+              //   "Metode: ${controller.selectedPaymentMethod.value}",
+              //       () => _showPaymentMethodDialog(context),
+              // ),
               _buildMenuTile(
                 context,
                 Icons.print,
@@ -193,7 +193,7 @@ class SettingView extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 60),
         ],
       ),
     );
@@ -352,12 +352,12 @@ class SettingView extends StatelessWidget {
               value: controller.isNotificationEnabled.value,
               onChanged: (value) => controller.toggleNotification(),
             )),
-            ListTile(
-              title: Text("Bahasa"),
-              subtitle: Obx(() => Text(controller.selectedLanguage.value)),
-              trailing: Icon(Icons.arrow_forward_ios),
-              onTap: () => _showLanguageDialog(context),
-            ),
+            // ListTile(
+            //   title: Text("Bahasa"),
+            //   subtitle: Obx(() => Text(controller.selectedLanguage.value)),
+            //   trailing: Icon(Icons.arrow_forward_ios),
+            //   onTap: () => _showLanguageDialog(context),
+            // ),
           ],
         ),
         actions: [

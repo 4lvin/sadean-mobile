@@ -17,17 +17,18 @@ class DashboardController extends GetxController {
   final IncomeExpenseService _incomeExpenseService = Get.find<IncomeExpenseService>();
 
   final RxInt transactionCount = 0.obs;
-  final RxDouble totalRevenue = 0.0.obs;
-  final RxDouble totalExpenses = 0.0.obs;
-  final RxDouble totalProfit = 0.0.obs;
+  final RxDouble totalRevenue = 0.0.obs; // Laba transaksi + income
+  final RxDouble totalExpenses = 0.0.obs; // Expense dari income_expense
+  final RxDouble totalProfit = 0.0.obs; // Total revenue - total expenses
   final RxList<Product> topProducts = <Product>[].obs;
   final RxList<Category> topCategories = <Category>[].obs;
   final RxBool isLoading = false.obs;
 
-  // New observables for income/expense
-  final RxDouble totalIncome = 0.0.obs;
-  final RxDouble totalExpense = 0.0.obs;
-  final RxDouble netBalance = 0.0.obs;
+  // Detailed breakdown observables
+  final RxDouble transactionProfit = 0.0.obs; // Laba dari penjualan
+  final RxDouble additionalIncome = 0.0.obs; // Income dari income_expense
+  final RxDouble businessExpenses = 0.0.obs; // Expense dari income_expense
+  final RxDouble netBalance = 0.0.obs; // Total revenue - total expenses
 
   @override
   void onInit() {
@@ -44,20 +45,24 @@ class DashboardController extends GetxController {
       final products = await _productService.getAllProducts();
       final categories = await _categoryService.getAllCategories();
 
+      // Transaction data
       transactionCount.value = stats['transactionCount']!.toInt();
-      totalRevenue.value = stats['revenue']!;
+      transactionProfit.value = stats['profit']!; // Laba dari penjualan
 
       // Fetch income/expense stats
       final incomeExpenseStats = await _incomeExpenseService.getStatistics();
-      totalIncome.value = incomeExpenseStats['totalIncome'] ?? 0.0;
-      totalExpense.value = incomeExpenseStats['totalExpense'] ?? 0.0;
-      netBalance.value = incomeExpenseStats['balance'] ?? 0.0;
+      additionalIncome.value = incomeExpenseStats['totalIncome'] ?? 0.0;
+      businessExpenses.value = incomeExpenseStats['totalExpense'] ?? 0.0;
 
-      // Use totalExpense from income_expense table for dashboard
-      totalExpenses.value = totalExpense.value;
+      // Calculate total revenue (laba transaksi + pendapatan income)
+      totalRevenue.value = transactionProfit.value + additionalIncome.value;
 
-      // Calculate profit as revenue minus cost from transactions
-      totalProfit.value = stats['revenue']! - stats['cost']!;
+      // Total expenses (hanya dari income_expense table)
+      totalExpenses.value = businessExpenses.value;
+
+      // Calculate net profit (total revenue - total expenses)
+      totalProfit.value = totalRevenue.value - totalExpenses.value;
+      netBalance.value = totalProfit.value;
 
       // Sort products by sold count and take top 3
       products.sort((a, b) => b.soldCount.compareTo(a.soldCount));
@@ -72,6 +77,23 @@ class DashboardController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  // Helper method to get breakdown data
+  Map<String, double> getRevenueBreakdown() {
+    return {
+      'transactionProfit': transactionProfit.value,
+      'additionalIncome': additionalIncome.value,
+      'totalRevenue': totalRevenue.value,
+    };
+  }
+
+  // Helper method to get expense breakdown
+  Map<String, double> getExpenseBreakdown() {
+    return {
+      'businessExpenses': businessExpenses.value,
+      'totalExpenses': totalExpenses.value,
+    };
   }
 
   String formatCurrency(double value) {
