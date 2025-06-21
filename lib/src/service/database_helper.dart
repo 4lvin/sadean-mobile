@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "sadean_pos.db";
-  static const _databaseVersion = 3; // Incremented for payment support
+  static const _databaseVersion = 4; // Incremented for stock tracking support
 
   // Table names
   static const String tableCategories = 'categories';
@@ -50,7 +50,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // Products table
+    // Products table with stock tracking
     await db.execute('''
       CREATE TABLE $tableProducts (
         id TEXT PRIMARY KEY,
@@ -65,6 +65,7 @@ class DatabaseHelper {
         stock INTEGER NOT NULL,
         min_stock INTEGER NOT NULL,
         sold_count INTEGER DEFAULT 0,
+        is_stock_enabled INTEGER DEFAULT 1,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         FOREIGN KEY (category_id) REFERENCES $tableCategories (id) ON DELETE RESTRICT
@@ -110,29 +111,31 @@ class DatabaseHelper {
       )
     ''');
 
+    // Income/Expense table
     await db.execute('''
-  CREATE TABLE $tableIncomeExpense (
-    id TEXT PRIMARY KEY,
-    type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
-    amount REAL NOT NULL,
-    payment_method TEXT NOT NULL DEFAULT 'cash',
-    notes TEXT,
-    date TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  )
-''');
+      CREATE TABLE $tableIncomeExpense (
+        id TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+        amount REAL NOT NULL,
+        payment_method TEXT NOT NULL DEFAULT 'cash',
+        notes TEXT,
+        date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
 
     // Create indexes for better performance
     await db.execute('CREATE INDEX idx_products_category_id ON $tableProducts (category_id)');
     await db.execute('CREATE INDEX idx_products_barcode ON $tableProducts (barcode)');
     await db.execute('CREATE INDEX idx_products_sku ON $tableProducts (sku)');
+    await db.execute('CREATE INDEX idx_products_stock_enabled ON $tableProducts (is_stock_enabled)');
+    await db.execute('CREATE INDEX idx_products_low_stock ON $tableProducts (stock, min_stock, is_stock_enabled)');
     await db.execute('CREATE INDEX idx_transaction_items_transaction_id ON $tableTransactionItems (transaction_id)');
     await db.execute('CREATE INDEX idx_transaction_items_product_id ON $tableTransactionItems (product_id)');
     await db.execute('CREATE INDEX idx_transactions_date ON $tableTransactions (date)');
     await db.execute('CREATE INDEX idx_income_expense_type ON $tableIncomeExpense (type)');
     await db.execute('CREATE INDEX idx_income_expense_date ON $tableIncomeExpense (date)');
-
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -147,21 +150,33 @@ class DatabaseHelper {
     if (oldVersion < 3) {
       // Create income/expense table
       await db.execute('''
-      CREATE TABLE $tableIncomeExpense (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
-        amount REAL NOT NULL,
-        payment_method TEXT NOT NULL DEFAULT 'cash',
-        notes TEXT,
-        date TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      )
-    ''');
+        CREATE TABLE $tableIncomeExpense (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+          amount REAL NOT NULL,
+          payment_method TEXT NOT NULL DEFAULT 'cash',
+          notes TEXT,
+          date TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
 
       // Create indexes
       await db.execute('CREATE INDEX idx_income_expense_type ON $tableIncomeExpense (type)');
       await db.execute('CREATE INDEX idx_income_expense_date ON $tableIncomeExpense (date)');
+    }
+
+    if (oldVersion < 4) {
+      // Add stock tracking column to products table
+      await db.execute('ALTER TABLE $tableProducts ADD COLUMN is_stock_enabled INTEGER DEFAULT 1');
+
+      // Create new indexes for stock tracking
+      await db.execute('CREATE INDEX idx_products_stock_enabled ON $tableProducts (is_stock_enabled)');
+      await db.execute('CREATE INDEX idx_products_low_stock ON $tableProducts (stock, min_stock, is_stock_enabled)');
+
+      // Update existing products to have stock tracking enabled by default
+      await db.execute('UPDATE $tableProducts SET is_stock_enabled = 1 WHERE is_stock_enabled IS NULL');
     }
   }
 
@@ -220,6 +235,52 @@ class DatabaseHelper {
     return await db.transaction(action);
   }
 
+  // Stock tracking specific queries
+  Future<List<Map<String, dynamic>>> getLowStockProducts() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT * FROM $tableProducts 
+      WHERE is_stock_enabled = 1 AND stock <= min_stock AND stock > 0
+      ORDER BY stock ASC, name ASC
+    ''');
+  }
+
+  Future<List<Map<String, dynamic>>> getOutOfStockProducts() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT * FROM $tableProducts 
+      WHERE is_stock_enabled = 1 AND stock = 0
+      ORDER BY name ASC
+    ''');
+  }
+
+  Future<List<Map<String, dynamic>>> getUnlimitedStockProducts() async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT * FROM $tableProducts 
+      WHERE is_stock_enabled = 0
+      ORDER BY name ASC
+    ''');
+  }
+
+  Future<Map<String, int>> getStockStatistics() async {
+    final db = await database;
+
+    final totalProducts = await db.rawQuery('SELECT COUNT(*) as count FROM $tableProducts');
+    final stockEnabledProducts = await db.rawQuery('SELECT COUNT(*) as count FROM $tableProducts WHERE is_stock_enabled = 1');
+    final unlimitedStockProducts = await db.rawQuery('SELECT COUNT(*) as count FROM $tableProducts WHERE is_stock_enabled = 0');
+    final lowStockProducts = await db.rawQuery('SELECT COUNT(*) as count FROM $tableProducts WHERE is_stock_enabled = 1 AND stock <= min_stock AND stock > 0');
+    final outOfStockProducts = await db.rawQuery('SELECT COUNT(*) as count FROM $tableProducts WHERE is_stock_enabled = 1 AND stock = 0');
+
+    return {
+      'total': totalProducts.first['count'] as int,
+      'stockEnabled': stockEnabledProducts.first['count'] as int,
+      'unlimitedStock': unlimitedStockProducts.first['count'] as int,
+      'lowStock': lowStockProducts.first['count'] as int,
+      'outOfStock': outOfStockProducts.first['count'] as int,
+    };
+  }
+
   // Close database
   Future<void> close() async {
     final db = await database;
@@ -232,6 +293,7 @@ class DatabaseHelper {
     await db.transaction((txn) async {
       await txn.delete(tableTransactionItems);
       await txn.delete(tableTransactions);
+      await txn.delete(tableIncomeExpense);
       await txn.delete(tableProducts);
       await txn.delete(tableCategories);
     });
