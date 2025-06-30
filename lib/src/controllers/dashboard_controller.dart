@@ -256,7 +256,7 @@ class DashboardController extends GetxController {
       businessExpenses.value = incomeExpenseStats['totalExpense'] ?? 0.0;
 
       // Calculate total revenue (total sales + additional income)
-      totalRevenue.value = totalSales.value + additionalIncome.value;
+      totalRevenue.value = transactionProfit.value + additionalIncome.value;
 
       // Total expenses (hanya dari income_expense table)
       totalExpenses.value = businessExpenses.value;

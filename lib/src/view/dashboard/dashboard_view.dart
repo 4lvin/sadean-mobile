@@ -133,7 +133,7 @@ class DashboardView extends StatelessWidget {
                           'Rp ${formatCurrency(controller.totalRevenue.value)}',
                       icon: Icons.trending_up,
                       color: Colors.green,
-                      subtitle: 'Penjualan + Income',
+                      subtitle: 'Laba Penjualan + Income',
                       onTap: () => _showRevenueBreakdown(),
                     ),
                     SummaryCard(
