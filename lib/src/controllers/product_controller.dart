@@ -511,4 +511,200 @@ class ProductController extends GetxController {
       return false;
     }
   }
+
+  Future<void> updateProduct({
+    required String id,
+    required String name,
+    required String categoryId,
+    required String sku,
+    required String barcode,
+    required double costPrice,
+    required double sellingPrice,
+    required String unit,
+    required int stock,
+    required int minStock,
+    File? imageFile,
+    bool removeImage = false,
+    required bool isStockEnabled,
+  }) async {
+    try {
+      isLoading.value = true;
+
+      await _service.updateProduct(
+        id: id,
+        name: name,
+        categoryId: categoryId,
+        sku: sku,
+        barcode: barcode,
+        costPrice: costPrice,
+        sellingPrice: sellingPrice,
+        unit: unit,
+        stock: stock,
+        minStock: minStock,
+        imageFile: imageFile,
+        removeImage: removeImage,
+        isStockEnabled: isStockEnabled,
+      );
+      await loadData();
+      Get.back();
+      Get.back();
+      Get.snackbar(
+        'Berhasil',
+        'Produk berhasil diupdate',
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade800,
+        icon: const Icon(Icons.check_circle, color: Colors.green),
+        duration: const Duration(seconds: 3),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        e.toString(),
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+        icon: const Icon(Icons.error, color: Colors.red),
+      );
+      rethrow;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+// Check if SKU exists (for validation) - updated with excludeId
+  Future<bool> isSkuExists(String sku, {String? excludeId}) async {
+    try {
+      return await _service.isSkuExists(sku, excludeId: excludeId);
+    } catch (e) {
+      return false;
+    }
+  }
+
+// Check if Barcode exists (for validation) - updated with excludeId
+  Future<bool> isBarcodeExists(String barcode, {String? excludeId}) async {
+    try {
+      return await _service.isBarcodeExists(barcode, excludeId: excludeId);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> validateEditForm(String productId) async {
+    // Basic field validation
+    if (nameController.text.trim().isEmpty) {
+      _showValidationError('Nama produk tidak boleh kosong');
+      return false;
+    }
+
+    if (selectedCategoryId.value == null || selectedCategoryId.value!.isEmpty) {
+      _showValidationError('Pilih kategori produk');
+      return false;
+    }
+
+    if (barcodeController.text.trim().isEmpty) {
+      _showValidationError('Barcode tidak boleh kosong');
+      return false;
+    }
+
+    if (costPriceController.text.trim().isEmpty) {
+      _showValidationError('Harga modal tidak boleh kosong');
+      return false;
+    }
+
+    if (sellingPriceController.text.trim().isEmpty) {
+      _showValidationError('Harga jual tidak boleh kosong');
+      return false;
+    }
+
+    if (unitController.text.trim().isEmpty) {
+      _showValidationError('Satuan tidak boleh kosong');
+      return false;
+    }
+
+    // Stock validation only if stock tracking is enabled
+    if (isStockEnabled.value) {
+      if (stockController.text.trim().isEmpty) {
+        _showValidationError('Stok saat ini tidak boleh kosong');
+        return false;
+      }
+
+      if (minStockController.text.trim().isEmpty) {
+        _showValidationError('Stok minimum tidak boleh kosong');
+        return false;
+      }
+    }
+
+    return await _validateEditBusinessLogic(productId);
+  }
+
+  Future<bool> _validateEditBusinessLogic(String productId) async {
+    // Number format validation
+    try {
+      final costPriceValue = double.parse(costPriceController.text);
+      final sellingPriceValue = double.parse(sellingPriceController.text);
+
+      if (costPriceValue < 0) {
+        _showValidationError('Harga modal tidak boleh negatif');
+        return false;
+      }
+
+      if (sellingPriceValue < 0) {
+        _showValidationError('Harga jual tidak boleh negatif');
+        return false;
+      }
+
+      if (sellingPriceValue <= costPriceValue) {
+        final result = await Get.dialog<bool>(
+          AlertDialog(
+            title: const Text('Peringatan Harga'),
+            content: const Text(
+                'Harga jual sama atau lebih rendah dari harga modal.\n'
+                    'Ini akan mengakibatkan kerugian atau tidak ada keuntungan.\n\n'
+                    'Apakah Anda yakin ingin melanjutkan?'
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () => Get.back(result: true),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                child: const Text('Lanjutkan'),
+              ),
+            ],
+          ),
+        );
+
+        if (result != true) return false;
+      }
+
+      // Stock validation if enabled
+      if (isStockEnabled.value) {
+        final stock = int.parse(stockController.text);
+        final minStock = int.parse(minStockController.text);
+
+        if (stock < 0) {
+          _showValidationError('Stok tidak boleh negatif');
+          return false;
+        }
+
+        if (minStock < 0) {
+          _showValidationError('Stok minimum tidak boleh negatif');
+          return false;
+        }
+      }
+
+      // Barcode uniqueness check (exclude current product)
+      if (await _service.isBarcodeExists(barcodeController.text.trim(), excludeId: productId)) {
+        _showValidationError('Barcode "${barcodeController.text.trim()}" sudah digunakan');
+        return false;
+      }
+
+    } catch (e) {
+      _showValidationError('Format angka tidak valid');
+      return false;
+    }
+
+    return true;
+  }
 }

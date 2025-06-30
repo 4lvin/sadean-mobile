@@ -1,10 +1,14 @@
 // Updated lib/src/controllers/dashboard_controller.dart
 
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sadean/src/service/secure_storage_service.dart';
 
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../models/transaction_model.dart';
+import '../routers/constant.dart';
+import '../service/api_service.dart';
 import '../service/category_service.dart';
 import '../service/product_service.dart';
 import '../service/transaction_service.dart';
@@ -29,11 +33,144 @@ class DashboardController extends GetxController {
   final RxDouble additionalIncome = 0.0.obs; // Income dari income_expense
   final RxDouble businessExpenses = 0.0.obs; // Expense dari income_expense
   final RxDouble netBalance = 0.0.obs; // Total revenue - total expenses
+  final ApiProvider _apiProvider = ApiProvider();
 
   @override
   void onInit() {
     super.onInit();
     fetchDashboardData();
+  }
+
+
+  Future subscribe() async {
+    try {
+      isLoading.value = true;
+      var response = await _apiProvider.checkSubscribe();
+      if (response != null) {
+        print(response);
+        if (response['status'] == true) {
+          isLoading.value = false;
+          if(response['data']['subscriptions'][0]['status'] != "active") {
+            Get.dialog(
+              WillPopScope(
+                onWillPop: () async => false, // Mencegah dismiss dengan tombol back
+                child: AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  backgroundColor: Colors.white,
+                  elevation: 10,
+                  title: Container(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(15),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: Icon(
+                            Icons.warning_rounded,
+                            color: Colors.red.shade600,
+                            size: 40,
+                          ),
+                        ),
+                        SizedBox(height: 15),
+                        Text(
+                          "Langganan Tidak Aktif",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red.shade700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  content: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Anda perlu berlangganan untuk melanjutkan menggunakan fitur premium aplikasi ini.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                            height: 1.5,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: double.infinity,
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Navigasi ke halaman langganan
+                              // Get.back(); // Hapus jika ingin benar-benar tidak bisa ditutup
+                              // Get.toNamed('/subscription'); // Contoh navigasi
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red.shade600,
+                              foregroundColor: Colors.white,
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              shadowColor: Colors.red.shade200,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.star, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  "Langganan Sekarang",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                  titlePadding: EdgeInsets.all(20),
+                  contentPadding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+                ),
+              ),
+              barrierDismissible: false, // Mencegah tap di luar dialog untuk menutup
+            );
+          }
+        } else {
+          isLoading.value = false;
+          if(response['message'] == "Unauthenticated.") {
+            await SecureStorageService().clearAll();
+            // Clear user data and navigate to login
+            Get.offAllNamed(loginRoute);
+            Get.snackbar(
+              "Logout",
+              "Berhasil keluar dari aplikasi",
+              snackPosition: SnackPosition.TOP,
+            );
+          }
+        }
+      } else {
+        isLoading.value = false;
+        Get.rawSnackbar(message: "Response Null");
+      }
+    } catch (e) {
+      isLoading.value = false;
+      Get.rawSnackbar(message: e.toString());
+      rethrow;
+    }
   }
 
   Future<void> fetchDashboardData() async {
@@ -44,7 +181,7 @@ class DashboardController extends GetxController {
       final stats = await _transactionService.getDashboardStats();
       final products = await _productService.getAllProducts();
       final categories = await _categoryService.getAllCategories();
-
+      subscribe();
       // Transaction data
       transactionCount.value = stats['transactionCount']!.toInt();
       transactionProfit.value = stats['profit']!; // Laba dari penjualan

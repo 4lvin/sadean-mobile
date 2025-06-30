@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sadean/src/view/product/edit_produk_view.dart';
 import '../../config/theme.dart';
 import '../../controllers/product_controller.dart';
 import '../../models/category_model.dart';
 import '../../models/product_model.dart';
-
 
 class ProductDetailView extends StatelessWidget {
   final ProductController controller = Get.find<ProductController>();
@@ -16,18 +16,27 @@ class ProductDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Detail Produk'),
+        title: const Text(
+          'Detail Produk',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: primaryColor,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Get.back(),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit, color: Colors.white),
             onPressed: () => _editProduct(),
+            tooltip: 'Edit Produk',
           ),
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete, color: Colors.white),
             onPressed: () => _confirmDelete(),
+            tooltip: 'Hapus Produk',
           ),
         ],
       ),
@@ -43,25 +52,29 @@ class ProductDetailView extends StatelessWidget {
                 height: 200,
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.3),
                       spreadRadius: 2,
-                      blurRadius: 5,
-                      offset: const Offset(0, 3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                   child: product.imageUrl != null
                       ? Hero(
                     tag: 'product-hero-${product.id}',
                     child: Image.file(
                       File(product.imageUrl!),
                       fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Icon(Icons.broken_image, size: 50, color: Colors.grey[400]),
+                      errorBuilder: (_, __, ___) => Icon(
+                          Icons.broken_image,
+                          size: 80,
+                          color: Colors.grey[400]
+                      ),
                     ),
                   )
                       : Icon(
@@ -75,26 +88,86 @@ class ProductDetailView extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Stock Status Badge
-            if (product.stock <= product.minStock)
+            // Product Name Card
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: primaryColor.withOpacity(0.3)),
+                          ),
+                          child: Text(
+                            controller.categories
+                                .firstWhere((cat) => cat.id == product.categoryId,
+                                orElse: () => Category(id: '', name: 'Unknown'))
+                                .name,
+                            style: TextStyle(
+                              color: primaryColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        _buildStockStatusBadge(),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Stock Status Alert (if needed)
+            if (product.isStockEnabled && product.stock <= product.minStock)
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade300),
+                  color: product.stock == 0 ? Colors.red.shade100 : Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: product.stock == 0 ? Colors.red.shade300 : Colors.orange.shade300,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning, color: Colors.red.shade700),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Stok Rendah! Segera lakukan restok.',
-                      style: TextStyle(
-                        color: Colors.red.shade700,
-                        fontWeight: FontWeight.bold,
+                    Icon(
+                      product.stock == 0 ? Icons.error : Icons.warning,
+                      color: product.stock == 0 ? Colors.red.shade700 : Colors.orange.shade700,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        product.stock == 0
+                            ? 'Produk habis! Segera lakukan restok.'
+                            : 'Stok rendah! Segera lakukan restok.',
+                        style: TextStyle(
+                          color: product.stock == 0 ? Colors.red.shade700 : Colors.orange.shade700,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -103,11 +176,10 @@ class ProductDetailView extends StatelessWidget {
 
             // Product Details Card
             Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -119,29 +191,67 @@ class ProductDetailView extends StatelessWidget {
                         color: primaryColor,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Nama Produk', product.name),
+                    const SizedBox(height: 20),
+                    _buildDetailRow('SKU', product.sku, Icons.qr_code),
+                    _buildDetailRow('Barcode', product.barcode, Icons.qr_code_scanner),
+                    _buildDetailRow('Satuan', product.unit, Icons.straighten),
+                    const Divider(height: 32),
                     _buildDetailRow(
-                        'Kategori',
-                        controller.categories
-                            .firstWhere((cat) => cat.id == product.categoryId,
-                            orElse: () => Category(id: '', name: 'Unknown'))
-                            .name
+                      'Harga Modal',
+                      'Rp ${_formatPrice(product.costPrice)}',
+                      Icons.money,
+                      valueColor: Colors.orange.shade700,
                     ),
-                    _buildDetailRow('SKU', product.sku),
-                    _buildDetailRow('Barcode', product.barcode),
-                    _buildDetailRow('Harga Modal', 'Rp ${_formatPrice(product.costPrice)}'),
-                    _buildDetailRow('Harga Jual', 'Rp ${_formatPrice(product.sellingPrice)}'),
-                    _buildDetailRow('Satuan', product.unit),
-                    _buildDetailRow('Stok', '${product.stock}'),
-                    _buildDetailRow('Stok Minimum', '${product.minStock}'),
-                    _buildDetailRow('Total Terjual', '${product.soldCount}'),
+                    _buildDetailRow(
+                      'Harga Jual',
+                      'Rp ${_formatPrice(product.sellingPrice)}',
+                      Icons.attach_money,
+                      valueColor: Colors.green.shade700,
+                    ),
+                    _buildDetailRow(
+                      'Laba per Unit',
+                      'Rp ${_formatPrice(product.profitPerUnit)} (${product.profitMargin.toStringAsFixed(1)}%)',
+                      Icons.trending_up,
+                      valueColor: product.profitPerUnit > 0 ? Colors.green.shade700 : Colors.red.shade700,
+                    ),
+                    const Divider(height: 32),
+                    if (product.isStockEnabled) ...[
+                      _buildDetailRow(
+                        'Stok Saat Ini',
+                        '${product.stock} ${product.unit}',
+                        Icons.inventory,
+                        valueColor: product.stock <= product.minStock ? Colors.red.shade700 : null,
+                      ),
+                      _buildDetailRow(
+                        'Stok Minimum',
+                        '${product.minStock} ${product.unit}',
+                        Icons.warning_amber,
+                      ),
+                      _buildDetailRow(
+                        'Nilai Stok',
+                        'Rp ${_formatPrice(product.stock * product.costPrice)}',
+                        Icons.calculate,
+                        valueColor: Colors.blue.shade700,
+                      ),
+                    ] else
+                      _buildDetailRow(
+                        'Stok',
+                        'Unlimited',
+                        Icons.all_inclusive,
+                        valueColor: Colors.blue.shade700,
+                      ),
+                    _buildDetailRow(
+                      'Total Terjual',
+                      '${product.soldCount} ${product.unit}',
+                      Icons.shopping_cart,
+                      valueColor: Colors.purple.shade700,
+                    ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Action Buttons
             Row(
@@ -153,18 +263,30 @@ class ProductDetailView extends StatelessWidget {
                     label: const Text('Tambah ke Transaksi'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => _editProduct(),
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Edit'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _editProduct(),
+                    icon: const Icon(Icons.edit),
+                    label: const Text('Edit Produk'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 2,
+                    ),
                   ),
                 ),
               ],
@@ -175,29 +297,123 @@ class ProductDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildStockStatusBadge() {
+    if (!product.isStockEnabled) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.blue.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.blue.shade300),
+        ),
+        child: Text(
+          'UNLIMITED',
+          style: TextStyle(
+            color: Colors.blue.shade700,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    if (product.stock == 0) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.red.shade300),
+        ),
+        child: Text(
+          'HABIS',
+          style: TextStyle(
+            color: Colors.red.shade700,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    if (product.stock <= product.minStock) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.shade300),
+        ),
+        child: Text(
+          'RENDAH',
+          style: TextStyle(
+            color: Colors.orange.shade700,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.green.shade100,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.shade300),
+      ),
+      child: Text(
+        'TERSEDIA',
+        style: TextStyle(
+          color: Colors.green.shade700,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, IconData icon, {Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: primaryColor,
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: valueColor ?? Colors.black87,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -206,36 +422,44 @@ class ProductDetailView extends StatelessWidget {
   }
 
   void _editProduct() {
-    // Pre-fill form dengan data produk
-    controller.nameController.text = product.name;
-    controller.selectedCategoryId.value = product.categoryId;
-    controller.skuController.text = product.sku;
-    controller.barcodeController.text = product.barcode;
-    controller.costPriceController.text = product.costPrice.toString();
-    controller.sellingPriceController.text = product.sellingPrice.toString();
-    controller.unitController.text = product.unit;
-    controller.stockController.text = product.stock.toString();
-    controller.minStockController.text = product.minStock.toString();
-
-    // Get.to(() => EditProductView(product: product));
+    Get.to(() => EditProductView(product: product));
   }
 
   void _confirmDelete() {
     Get.defaultDialog(
       title: 'Konfirmasi Hapus',
-      middleText: 'Apakah Anda yakin ingin menghapus ${product.name}?',
+      titleStyle: const TextStyle(fontWeight: FontWeight.bold),
+      middleText: 'Apakah Anda yakin ingin menghapus "${product.name}"?\n\nTindakan ini tidak dapat dibatalkan.',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
       buttonColor: Colors.red,
+      cancelTextColor: Colors.grey[600],
       onConfirm: () async {
-        Get.back();
-        await controller.deleteProduct(product.id);
+        Get.back(); // Close dialog
+        try {
+          await controller.deleteProduct(product.id);
+          Get.back(); // Go back to product list
+        } catch (e) {
+          // Error is already handled in controller
+        }
       },
     );
   }
 
   void _addToTransaction() {
+    // Check if product can be sold
+    if (product.isStockEnabled && product.stock <= 0) {
+      Get.snackbar(
+        'Stok Habis',
+        'Produk "${product.name}" sedang habis stok',
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+        icon: const Icon(Icons.error, color: Colors.red),
+      );
+      return;
+    }
+
     // Navigate to transaction view dan tambahkan produk ke cart
     Get.toNamed('/transaction', arguments: {'addProduct': product});
   }

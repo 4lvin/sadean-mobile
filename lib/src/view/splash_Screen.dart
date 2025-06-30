@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sadean/src/service/auth_service.dart';
 
 import '../config/assets.dart';
 import '../config/theme.dart';
@@ -15,10 +16,16 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  AuthService authService = Get.put(AuthService());
+
   @override
   void initState() {
-    Timer(const Duration(milliseconds: 700), () {
-      Get.offAllNamed(loginRoute);
+    Timer(const Duration(milliseconds: 700), () async {
+      if (await authService.isLoggedIn()) {
+        Get.offAllNamed(mainRoute);
+      } else {
+        Get.offAllNamed(loginRoute);
+      }
     });
     super.initState();
   }

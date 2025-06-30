@@ -4,8 +4,18 @@ import 'package:sadean/src/config/assets.dart';
 import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/routers/constant.dart';
 
-class LoginView extends StatelessWidget {
+import '../../controllers/login_controller.dart';
+
+class LoginView extends StatefulWidget {
   const LoginView({super.key});
+
+  @override
+  State<LoginView> createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  // Declare TextEditingController instances
+  final LoginController controller = Get.put(LoginController());
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +39,16 @@ class LoginView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Login",
-                        style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    const Text(
+                      "Login",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     TextField(
+                      controller: controller.emailController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.email_outlined),
                         hintText: "Email",
@@ -43,7 +58,8 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    Obx(()=>TextField(
+                      controller: controller.passwordController,
                       obscureText: true,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -52,7 +68,7 @@ class LoginView extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                    ),
+                    )),
                     const SizedBox(height: 8),
                     Align(
                       alignment: Alignment.centerRight,
@@ -65,19 +81,47 @@ class LoginView extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       height: 48,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: secondaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      child: Obx(
+                        () => ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: secondaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
+                          onPressed: () {
+                            controller.isLoading.value
+                                ? null
+                                : controller.login();
+                          },
+                          child:
+                              controller.isLoading.value
+                                  ? const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text(
+                                        "LOGIN...",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ],
+                                  )
+                                  : const Text(
+                                    "LOGIN",
+                                    style: TextStyle(color: primaryColor),
+                                  ),
                         ),
-                        onPressed: () {
-                          Get.offAllNamed(mainRoute);
-                        },
-                        child: const Text("LOGIN",style: TextStyle(color: primaryColor),),
                       ),
                     ),
+
                     const SizedBox(height: 20),
                     const Row(
                       children: [
@@ -94,7 +138,7 @@ class LoginView extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Don’t have account? "),
+                          const Text("Don't have account? "),
                           GestureDetector(
                             onTap: () {},
                             child: const Text(
@@ -107,7 +151,7 @@ class LoginView extends StatelessWidget {
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -116,20 +160,21 @@ class LoginView extends StatelessWidget {
           Positioned(
             top: size.height * 0.08,
             left: 24,
-            child: Column(
+            child: const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Hello!",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                    )),
-                Text("Welcome to Sadean",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    )),
+                Text(
+                  "Hello!",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  "Welcome to Sadean",
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
               ],
             ),
           ),
@@ -144,7 +189,7 @@ class LoginView extends StatelessWidget {
                 fit: BoxFit.contain,
               ),
             ),
-          )
+          ),
         ],
       ),
     );

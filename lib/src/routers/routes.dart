@@ -7,10 +7,12 @@ import 'package:sadean/src/view/setting/privacy.dart';
 import 'package:sadean/src/view/transaction/transaction_detail.dart';
 import 'package:sadean/src/view/transaction/transaction_index.dart';
 import 'package:sadean/src/view/transaction/transaction_view.dart';
+import '../models/product_model.dart';
 import '../view/history/history_detail.dart';
 import '../view/history/receipt_view.dart';
 import '../view/login/login.dart';
 import '../view/main_page.dart';
+import '../view/product/edit_produk_view.dart';
 import '../view/splash_Screen.dart';
 import 'constant.dart';
 
@@ -36,5 +38,11 @@ final List<GetPage<dynamic>> routes = [
           customerName: Get.arguments['customerName'] ?? 'SADEAN',
           phoneNumber: Get.arguments['phoneNumber'] ?? '08573671088',
         ),
+  ),
+  GetPage(
+    name: productsEditRoute,
+    page: () => EditProductView(
+      product: Get.arguments as Product,
+    ),
   ),
 ];

@@ -110,32 +110,56 @@ class ProductService extends GetxService {
       final currentProduct = await getProductById(id);
       if (currentProduct == null) throw Exception('Produk tidak ditemukan');
 
+      // Validate data (excluding current product from uniqueness checks)
       await _validateProductData(name, categoryId, sku, barcode, excludeId: id);
 
       String? imagePath = currentProduct.imageUrl;
       if (removeImage) {
-        if (imagePath != null) File(imagePath).delete().catchError((_) {});
+        if (imagePath != null) {
+          try {
+            File(imagePath).delete();
+          } catch (e) {
+            print('Warning: Could not delete old image file: $e');
+          }
+        }
         imagePath = null;
       } else if (imageFile != null) {
+        // Delete old image if exists
+        if (imagePath != null) {
+          try {
+            File(imagePath).delete();
+          } catch (e) {
+            print('Warning: Could not delete old image file: $e');
+          }
+        }
         imagePath = await _saveImageFile(imageFile);
       }
 
-      final updateData = _convertToDbMap({
+      // Prepare update data - ONLY include fields that are being updated
+      final updateData = <String, dynamic>{
         'name': name.trim(),
-        'categoryId': categoryId,
-        'imageUrl': imagePath,
+        'category_id': categoryId,
+        'image_url': imagePath,
         'sku': sku.trim(),
         'barcode': barcode.trim(),
-        'costPrice': costPrice,
-        'sellingPrice': sellingPrice,
+        'cost_price': costPrice,
+        'selling_price': sellingPrice,
         'unit': unit.trim(),
         'stock': stock,
-        'minStock': minStock,
-        'isStockEnabled': isStockEnabled ?? currentProduct.isStockEnabled,
-      });
+        'min_stock': minStock,
+        'is_stock_enabled': (isStockEnabled ?? currentProduct.isStockEnabled) ? 1 : 0,
+        'updated_at': DateTime.now().toIso8601String(),
+      };
 
       await _dbHelper.transaction((txn) async {
-        await txn.update(DatabaseHelper.tableProducts, updateData, where: 'id = ?', whereArgs: [id]);
+        await txn.update(
+            DatabaseHelper.tableProducts,
+            updateData,
+            where: 'id = ?',
+            whereArgs: [id]
+        );
+
+        // Update category count if category changed
         if (currentProduct.categoryId != categoryId) {
           await _updateCategoryProductCount(currentProduct.categoryId, txn);
           await _updateCategoryProductCount(categoryId, txn);

@@ -4,4 +4,5 @@ class ApiConstants {
 
   // Endpoints
   static const String login = '${baseUrl}login';
+  static const String checkSubscribe = '${baseUrl}user/subscriptions';
 }

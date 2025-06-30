@@ -3,6 +3,7 @@ const String loginRoute = '/login';
 const String mainRoute = '/main';
 const String dashboardRoute = '/dashboard';
 const String productsRoute = '/products';
+const String productsEditRoute = '/products/edit';
 const String productsAddRoute = '/products/add';
 const String productsDetailRoute = '/products/detail';
 const String historyRoute = '/history';
