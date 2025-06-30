@@ -39,6 +39,15 @@ class SummaryCard extends StatelessWidget {
                     color: color,
                     size: 24,
                   ),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const Spacer(),
                   if (onTap != null)
                     Icon(
@@ -53,15 +62,6 @@ class SummaryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                     SizedBox(height: 4),
                     Expanded(
                       child: FittedBox(

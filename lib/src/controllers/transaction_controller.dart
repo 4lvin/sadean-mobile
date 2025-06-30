@@ -10,11 +10,13 @@ import '../service/category_service.dart';
 import '../service/product_service.dart';
 import '../service/transaction_service.dart';
 import '../view/history/receipt_view.dart';
+import 'history_controller.dart';
 
 class TransactionController extends GetxController {
   final TransactionService _service = Get.find<TransactionService>();
   final ProductService _productService = Get.find<ProductService>();
   final CategoryService _categoryService = Get.find<CategoryService>();
+  final HistoryController _historyController = Get.put(HistoryController());
 
   // Cart Management
   final RxList<TransactionItem> cartItems = <TransactionItem>[].obs;
@@ -674,6 +676,7 @@ class TransactionController extends GetxController {
       // Clear cart after successful transaction
       clearCart();
       loadInitialData();
+      _historyController.fetchTransactions();
 
       // Show success dialog with options
       _showTransactionSuccessDialog(transaction);

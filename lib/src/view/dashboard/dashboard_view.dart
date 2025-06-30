@@ -106,20 +106,21 @@ class DashboardView extends StatelessWidget {
                 // Main Summary cards in a grid
                 GridView.count(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 14,
+                  childAspectRatio: 3 / 2.5,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   children: [
                     SummaryCard(
-                      title: 'Total Transaksi',
+                      title: ' Total Transaksi',
                       value: '${controller.transactionCount.value}',
                       icon: Icons.receipt,
                       color: Colors.blue,
                       onTap: () => _showTransactionBreakdown(),
                     ),
                     SummaryCard(
-                      title: 'Total Penjualan',
+                      title: ' Total Penjualan',
                       value:
                           'Rp ${formatCurrency(controller.totalSales.value)}',
                       icon: Icons.shopping_cart,
@@ -128,7 +129,7 @@ class DashboardView extends StatelessWidget {
                       onTap: () => _showSalesBreakdown(),
                     ),
                     SummaryCard(
-                      title: 'Total Pendapatan',
+                      title: ' Pendapatan',
                       value:
                           'Rp ${formatCurrency(controller.totalRevenue.value)}',
                       icon: Icons.trending_up,
@@ -137,16 +138,16 @@ class DashboardView extends StatelessWidget {
                       onTap: () => _showRevenueBreakdown(),
                     ),
                     SummaryCard(
-                      title: 'Total Pengeluaran',
+                      title: ' Pengeluaran',
                       value:
                           'Rp ${formatCurrency(controller.totalExpenses.value)}',
                       icon: Icons.trending_down,
                       color: Colors.red,
-                      subtitle: 'Business Expenses',
+                      subtitle: ' Pengeluaran',
                       onTap: () => _showExpenseBreakdown(),
                     ),
                     SummaryCard(
-                      title: 'Laba Penjualan',
+                      title: ' Laba Penjualan',
                       value:
                           'Rp ${formatCurrency(controller.transactionProfit.value)}',
                       icon: Icons.local_atm,
@@ -155,7 +156,7 @@ class DashboardView extends StatelessWidget {
                       onTap: () => _showTransactionProfitBreakdown(),
                     ),
                     SummaryCard(
-                      title: 'Laba Bersih',
+                      title: ' Laba Bersih',
                       value:
                           'Rp ${formatCurrency(controller.totalProfit.value)}',
                       icon: Icons.account_balance_wallet,

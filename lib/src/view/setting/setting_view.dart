@@ -52,7 +52,7 @@ class SettingView extends StatelessWidget {
         child: Column(
           children: [
             CircleAvatar(
-              radius: isTablet ? 60 : 50,
+              radius: isTablet ? 50 : 40,
               backgroundColor: Colors.white,
               child: Icon(
                 Icons.person,
@@ -77,29 +77,12 @@ class SettingView extends StatelessWidget {
                 color: Colors.white70,
               ),
             ),
-            SizedBox(height: 4),
-            Text(
-              controller.userPhone.value,
-              style: TextStyle(
-                fontSize: isTablet ? 16 : 14,
-                color: Colors.white70,
-              ),
-            ),
-            // SizedBox(height: 16),
-            // ElevatedButton.icon(
-            //   onPressed: () => _showEditProfileDialog(context),
-            //   icon: Icon(Icons.edit, size: isTablet ? 20 : 16),
-            //   label: Text(
-            //     "Edit Profil",
-            //     style: TextStyle(fontSize: isTablet ? 16 : 14),
-            //   ),
-            //   style: ElevatedButton.styleFrom(
-            //     backgroundColor: Colors.white,
-            //     foregroundColor: Colors.blue,
-            //     padding: EdgeInsets.symmetric(
-            //       horizontal: isTablet ? 24 : 16,
-            //       vertical: isTablet ? 12 : 8,
-            //     ),
+            // SizedBox(height: 4),
+            // Text(
+            //   controller.userPhone.value,
+            //   style: TextStyle(
+            //     fontSize: isTablet ? 16 : 14,
+            //     color: Colors.white70,
             //   ),
             // ),
           ],
@@ -119,36 +102,47 @@ class SettingView extends StatelessWidget {
         children: [
           _buildMenuSection(
             context,
-            "Pengaturan",
+            "Pengaturan Printer",
             [
+              _buildPrinterStatusCard(context),
               // _buildMenuTile(
               //   context,
-              //   Icons.settings,
-              //   "Pengaturan Umum",
-              //   "Atur preferensi aplikasi",
-              //       () => _showSettingsDialog(context),
-              // ),
-              // _buildMenuTile(
-              //   context,
-              //   Icons.currency_exchange,
-              //   "Satuan",
-              //   "Pilih mata uang: ${controller.selectedCurrency.value}",
-              //       () => _showCurrencyDialog(context),
-              // ),
-              // _buildMenuTile(
-              //   context,
-              //   Icons.payment,
-              //   "Jenis Pembayaran",
-              //   "Metode: ${controller.selectedPaymentMethod.value}",
-              //       () => _showPaymentMethodDialog(context),
+              //   Icons.bluetooth_searching,
+              //   "Cari Printer",
+              //   "Scan ulang printer Bluetooth",
+              //       () => controller.scanPrinters(),
+              //   trailing: Obx(() => controller.isLoading.value
+              //       ? SizedBox(
+              //     width: 20,
+              //     height: 20,
+              //     child: CircularProgressIndicator(strokeWidth: 2),
+              //   )
+              //       : Icon(Icons.search, color: Colors.blue)
+              //   ),
               // ),
               _buildMenuTile(
                 context,
                 Icons.print,
-                "Printer",
+                "Pilih Printer",
                 "Terpilih: ${controller.selectedPrinter.value}",
                     () => _showPrinterDialog(context),
               ),
+              if (controller.selectedPrinterDevice.value != null)
+                _buildMenuTile(
+                  context,
+                  Icons.print_outlined,
+                  "Test Print",
+                  "Cetak struk percobaan",
+                      () => controller.testPrint(),
+                  trailing: Obx(() => controller.isPrinting.value
+                      ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                      : Icon(Icons.print_outlined, color: Colors.green)
+                  ),
+                ),
             ],
           ),
           _buildMenuSection(
@@ -199,6 +193,124 @@ class SettingView extends StatelessWidget {
     );
   }
 
+  Widget _buildPrinterStatusCard(BuildContext context) {
+    bool isTablet = MediaQuery.of(context).size.width > 600;
+
+    return Obx(() => Container(
+        margin: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 16, vertical: 8),
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _getPrinterStatusColor().withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: _getPrinterStatusColor()),
+        ),
+        child: InkWell(
+          onTap: () {
+            if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) {
+              // If printer is selected but not connected, try to connect
+              controller.connectSelectedPrinter();
+            } else if (controller.selectedPrinterDevice.value == null) {
+              // If no printer selected, show selection dialog
+              _showPrinterDialog(context);
+            }
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _getPrinterStatusIcon(),
+                    color: _getPrinterStatusColor(),
+                    size: isTablet ? 28 : 24,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getPrinterStatusTitle(),
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.bold,
+                            color: _getPrinterStatusColor(),
+                          ),
+                        ),
+                        Text(
+                          _getPrinterStatusSubtitle(),
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (controller.isConnecting.value)
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(_getPrinterStatusColor()),
+                      ),
+                    ),
+                ],
+              ),
+              if (controller.selectedPrinterDevice.value != null) ...[
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.bluetooth, size: 16, color: Colors.grey[600]),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'MAC: ${controller.selectedPrinterDevice.value!.address ?? "Unknown"}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        )));
+    }
+
+  Color _getPrinterStatusColor() {
+    if (controller.isConnecting.value) return Colors.orange;
+    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return Colors.green;
+    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return Colors.red;
+    return Colors.grey;
+  }
+
+  IconData _getPrinterStatusIcon() {
+    if (controller.isConnecting.value) return Icons.bluetooth_searching;
+    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return Icons.bluetooth_connected;
+    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return Icons.bluetooth_disabled;
+    return Icons.bluetooth;
+  }
+
+  String _getPrinterStatusTitle() {
+    if (controller.isConnecting.value) return "Menghubungkan...";
+    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return "Printer Terhubung";
+    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return "Printer Terputus";
+    return "Belum Ada Printer";
+  }
+
+  String _getPrinterStatusSubtitle() {
+    if (controller.isConnecting.value) return "Sedang menghubungkan ke printer";
+    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return "Siap untuk mencetak";
+    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return "Tap untuk menyambungkan";
+    return "Silakan pilih printer Bluetooth";
+  }
+
   Widget _buildMenuSection(BuildContext context, String title, List<Widget> items) {
     bool isTablet = MediaQuery.of(context).size.width > 600;
 
@@ -237,6 +349,7 @@ class SettingView extends StatelessWidget {
       VoidCallback onTap, {
         Color? textColor,
         Color? iconColor,
+        Widget? trailing,
       }) {
     bool isTablet = MediaQuery.of(context).size.width > 600;
 
@@ -261,7 +374,7 @@ class SettingView extends StatelessWidget {
           color: Colors.grey[600],
         ),
       ),
-      trailing: Icon(
+      trailing: trailing ?? Icon(
         Icons.chevron_right,
         color: Colors.grey[400],
         size: isTablet ? 24 : 20,
@@ -274,211 +387,123 @@ class SettingView extends StatelessWidget {
     );
   }
 
-  void _showEditProfileDialog(BuildContext context) {
-    final nameController = TextEditingController(text: controller.userName.value);
-    final emailController = TextEditingController(text: controller.userEmail.value);
-    final phoneController = TextEditingController(text: controller.userPhone.value);
-
-    Get.dialog(
-      AlertDialog(
-        title: Text("Edit Profil"),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(
-                  labelText: "Nama",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: "Email",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: "No. Telepon",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text("Batal"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              controller.updateProfile(
-                name: nameController.text,
-                email: emailController.text,
-                phone: phoneController.text,
-              );
-              Get.back();
-            },
-            child: Text("Simpan"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSettingsDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text("Pengaturan Umum"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Obx(() => SwitchListTile(
-              title: Text("Mode Gelap"),
-              subtitle: Text("Aktifkan tema gelap"),
-              value: controller.isDarkMode.value,
-              onChanged: (value) => controller.toggleDarkMode(),
-            )),
-            Obx(() => SwitchListTile(
-              title: Text("Notifikasi"),
-              subtitle: Text("Terima notifikasi push"),
-              value: controller.isNotificationEnabled.value,
-              onChanged: (value) => controller.toggleNotification(),
-            )),
-            // ListTile(
-            //   title: Text("Bahasa"),
-            //   subtitle: Obx(() => Text(controller.selectedLanguage.value)),
-            //   trailing: Icon(Icons.arrow_forward_ios),
-            //   onTap: () => _showLanguageDialog(context),
-            // ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text("Tutup"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLanguageDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text("Pilih Bahasa"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: controller.languages.map((language) {
-            return Obx(() => RadioListTile<String>(
-              title: Text(language),
-              value: language,
-              groupValue: controller.selectedLanguage.value,
-              onChanged: (value) {
-                controller.updateLanguage(value!);
-                Get.back();
-              },
-            ));
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showCurrencyDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text("Pilih Mata Uang"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: controller.currencies.map((currency) {
-            return Obx(() => RadioListTile<String>(
-              title: Text(currency),
-              value: currency,
-              groupValue: controller.selectedCurrency.value,
-              onChanged: (value) {
-                controller.updateCurrency(value!);
-                Get.back();
-              },
-            ));
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
-  void _showPaymentMethodDialog(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text("Pilih Metode Pembayaran"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: controller.paymentMethods.map((method) {
-            return Obx(() => RadioListTile<String>(
-              title: Text(method),
-              value: method,
-              groupValue: controller.selectedPaymentMethod.value,
-              onChanged: (value) {
-                controller.updatePaymentMethod(value!);
-                Get.back();
-              },
-            ));
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
   void _showPrinterDialog(BuildContext context) {
     // Scan ulang printer saat dialog dibuka supaya daftar up to date
     controller.scanPrinters();
 
     Get.dialog(
       AlertDialog(
-        title: Text("Pilih Printer"),
-        content: Obx(() {
-          if (controller.printers.isEmpty) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Sedang mencari printer..."),
-                SizedBox(height: 16),
-                CircularProgressIndicator(),
-              ],
-            );
-          }
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.bluetooth, color: Colors.blue),
+            SizedBox(width: 12),
+            Text("Pilih Printer Bluetooth"),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text("Mencari printer..."),
+                  SizedBox(height: 8),
+                  Text(
+                    "Pastikan printer Bluetooth aktif",
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
+              );
+            }
 
-          return Obx(()=>SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
+            if (controller.printers.isEmpty) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.bluetooth_disabled, size: 64, color: Colors.grey[400]),
+                  SizedBox(height: 16),
+                  Text("Tidak ditemukan printer"),
+                  SizedBox(height: 8),
+                  Text(
+                    "Pastikan printer Bluetooth aktif dan dalam jangkauan",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => controller.scanPrinters(),
+                    icon: Icon(Icons.refresh, size: 20),
+                    label: Text("Scan Ulang"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return ListView.builder(
               shrinkWrap: true,
               itemCount: controller.printers.length,
               itemBuilder: (context, index) {
                 final device = controller.printers[index];
-                return RadioListTile<String>(
-                  title: Text(device.name ?? 'Unknown'),
-                  value: device.name ?? 'Unknown',
-                  groupValue: controller.selectedPrinter.value,
-                  onChanged: (value) {
-                    controller.updatePrinter(value!);
-                    Get.back();
-                  },
+                final isSelected = controller.selectedPrinter.value == (device.name ?? 'Unknown');
+
+                return Card(
+                  margin: EdgeInsets.only(bottom: 8),
+                  color: isSelected ? Colors.blue.shade50 : null,
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.print,
+                      color: isSelected ? Colors.blue : Colors.grey[600],
+                    ),
+                    title: Text(
+                      device.name ?? 'Unknown Device',
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.blue : null,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'MAC: ${device.address ?? "Unknown"}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle, color: Colors.green)
+                        : null,
+                    onTap: () {
+                      controller.updatePrinter(device.name ?? 'Unknown');
+                      Get.back();
+                    },
+                  ),
                 );
               },
-            ),
-          ));
-        }),
+            );
+          }),
+        ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text("Tutup"),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => controller.scanPrinters(),
+            icon: Icon(Icons.refresh, size: 20),
+            label: Text("Scan Ulang"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
           ),
         ],
       ),
