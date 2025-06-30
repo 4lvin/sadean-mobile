@@ -51,7 +51,6 @@ class _MyAppState extends State<MyApp> {
           initialRoute: rootRoute,
           getPages: routes,
           initialBinding: BindingsBuilder(() {
-            Get.put(DashboardController());
             Get.put(ProductController());
             Get.put(HistoryController());
             Get.put(SettingsController());

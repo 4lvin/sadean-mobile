@@ -85,23 +85,23 @@ class SettingView extends StatelessWidget {
                 color: Colors.white70,
               ),
             ),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _showEditProfileDialog(context),
-              icon: Icon(Icons.edit, size: isTablet ? 20 : 16),
-              label: Text(
-                "Edit Profil",
-                style: TextStyle(fontSize: isTablet ? 16 : 14),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.blue,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 24 : 16,
-                  vertical: isTablet ? 12 : 8,
-                ),
-              ),
-            ),
+            // SizedBox(height: 16),
+            // ElevatedButton.icon(
+            //   onPressed: () => _showEditProfileDialog(context),
+            //   icon: Icon(Icons.edit, size: isTablet ? 20 : 16),
+            //   label: Text(
+            //     "Edit Profil",
+            //     style: TextStyle(fontSize: isTablet ? 16 : 14),
+            //   ),
+            //   style: ElevatedButton.styleFrom(
+            //     backgroundColor: Colors.white,
+            //     foregroundColor: Colors.blue,
+            //     padding: EdgeInsets.symmetric(
+            //       horizontal: isTablet ? 24 : 16,
+            //       vertical: isTablet ? 12 : 8,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -121,13 +121,13 @@ class SettingView extends StatelessWidget {
             context,
             "Pengaturan",
             [
-              _buildMenuTile(
-                context,
-                Icons.settings,
-                "Pengaturan Umum",
-                "Atur preferensi aplikasi",
-                    () => _showSettingsDialog(context),
-              ),
+              // _buildMenuTile(
+              //   context,
+              //   Icons.settings,
+              //   "Pengaturan Umum",
+              //   "Atur preferensi aplikasi",
+              //       () => _showSettingsDialog(context),
+              // ),
               // _buildMenuTile(
               //   context,
               //   Icons.currency_exchange,

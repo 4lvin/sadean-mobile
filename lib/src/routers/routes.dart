@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:sadean/src/binding/dashboard_binding.dart';
 import 'package:sadean/src/view/product/add_product.dart';
 import 'package:sadean/src/view/product/detail_product.dart';
 import 'package:sadean/src/view/setting/contact.dart';
@@ -19,7 +20,7 @@ import 'constant.dart';
 final List<GetPage<dynamic>> routes = [
   GetPage(name: rootRoute, page: () => const SplashScreen()),
   GetPage(name: loginRoute, page: () => LoginView()),
-  GetPage(name: mainRoute, page: () => MainPage()),
+  GetPage(name: mainRoute, page: () => MainPage(),binding: DashboardBinding()),
   GetPage(name: productsAddRoute, page: () => AddProductView()),
   GetPage(name: transactionRoute, page: () => TransactionView()),
   GetPage(name: transactionIndexRoute, page: () => TransactionIndex()),
