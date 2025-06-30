@@ -222,12 +222,10 @@ class SettingsController extends GetxController {
   }
 
   // Helper function to create a properly spaced line
-  String createSpacedLine(String left, String right, int totalWidth) {
-    if (left.length + right.length >= totalWidth) {
-      return left + right;
-    }
-    int spaces = totalWidth - left.length - right.length;
-    return left + (' ' * spaces) + right;
+  String createSpacedLine(String left, String right, int width) {
+    int space = width - left.length - right.length;
+    if (space < 1) space = 1;
+    return '$left${' ' * space}$right';
   }
 
   // Helper function to center text
@@ -337,14 +335,14 @@ class SettingsController extends GetxController {
         final price = item.costPrice;
         final totalPrice = item.totalPrice;
 
-        // Product name (truncate if too long)
+        // Nama produk dipotong bila terlalu panjang
         String displayName = name.length > lineWidth ? name.substring(0, lineWidth - 3) + '...' : name;
         await _esc.text(content: displayName);
 
-        // Quantity x Price = Total
-        String qtyPriceText = '${qty}x${formatCurrency(price)}';
-        String totalText = formatCurrency(totalPrice);
-        await _esc.text(content: createSpacedLine(qtyPriceText, totalText, lineWidth));
+        // Format: 2x5.000         10.000
+        String qtyPrice = '${qty}x${formatCurrency(price)}';
+        String totalStr = formatCurrency(totalPrice);
+        await _esc.text(content: createSpacedLine(qtyPrice, totalStr, lineWidth));
         await _esc.text(content: '');
       }
 
@@ -360,14 +358,15 @@ class SettingsController extends GetxController {
       await _esc.text(content: createSpacedLine('Subtotal', formatCurrency(subtotalAmount), lineWidth));
       await _esc.text(content: createSpacedLine('Biaya Admin', formatCurrency(adminFeeAmount), lineWidth));
       await _esc.text(content: '');
+
       await _esc.text(
         content: createSpacedLine('TOTAL', formatCurrency(totalAmount), lineWidth),
         style: EscTextStyle.bold,
         fontSize: EscFontSize.size2,
       );
+
       await _esc.text(content: separator);
 
-      // Payment Info
       await _esc.text(content: createSpacedLine('Pembayaran', formatCurrency(paymentAmount), lineWidth));
       await _esc.text(content: createSpacedLine('Kembali', formatCurrency(changeAmount), lineWidth));
       await _esc.text(content: '');

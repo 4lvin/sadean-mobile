@@ -21,12 +21,18 @@ class DashboardController extends GetxController {
   final IncomeExpenseService _incomeExpenseService = Get.find<IncomeExpenseService>();
 
   final RxInt transactionCount = 0.obs;
-  final RxDouble totalRevenue = 0.0.obs; // Laba transaksi + income
+  final RxDouble totalRevenue = 0.0.obs; // Total penjualan + income
+  final RxDouble totalSales = 0.0.obs; // Total penjualan saja
   final RxDouble totalExpenses = 0.0.obs; // Expense dari income_expense
   final RxDouble totalProfit = 0.0.obs; // Total revenue - total expenses
   final RxList<Product> topProducts = <Product>[].obs;
   final RxList<Category> topCategories = <Category>[].obs;
   final RxBool isLoading = false.obs;
+
+  // Filter observables
+  final RxString selectedFilter = 'Semua'.obs;
+  final Rx<DateTime?> startDate = Rx<DateTime?>(null);
+  final Rx<DateTime?> endDate = Rx<DateTime?>(null);
 
   // Detailed breakdown observables
   final RxDouble transactionProfit = 0.0.obs; // Laba dari penjualan
@@ -41,6 +47,42 @@ class DashboardController extends GetxController {
     fetchDashboardData();
   }
 
+  void setFilter(String filter) {
+    selectedFilter.value = filter;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    switch (filter) {
+      case 'Hari Ini':
+        startDate.value = today;
+        endDate.value = today;
+        break;
+      case 'Kemarin':
+        final yesterday = today.subtract(Duration(days: 1));
+        startDate.value = yesterday;
+        endDate.value = yesterday;
+        break;
+      case 'Bulan Ini':
+        startDate.value = DateTime(now.year, now.month, 1);
+        endDate.value = DateTime(now.year, now.month + 1, 0);
+        break;
+      case 'Semua':
+      default:
+        startDate.value = null;
+        endDate.value = null;
+        break;
+    }
+
+    fetchDashboardData();
+  }
+
+  void setCustomDateRange(DateTime start, DateTime end) {
+    selectedFilter.value = 'Custom';
+    startDate.value = start;
+    endDate.value = end;
+    fetchDashboardData();
+  }
 
   Future subscribe() async {
     try {
@@ -53,7 +95,7 @@ class DashboardController extends GetxController {
           if(response['data']['subscriptions'][0]['status'] != "active") {
             Get.dialog(
               WillPopScope(
-                onWillPop: () async => false, // Mencegah dismiss dengan tombol back
+                onWillPop: () async => false,
                 child: AlertDialog(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -110,8 +152,6 @@ class DashboardController extends GetxController {
                           child: ElevatedButton(
                             onPressed: () {
                               // Navigasi ke halaman langganan
-                              // Get.back(); // Hapus jika ingin benar-benar tidak bisa ditutup
-                              // Get.toNamed('/subscription'); // Contoh navigasi
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red.shade600,
@@ -146,14 +186,13 @@ class DashboardController extends GetxController {
                   contentPadding: EdgeInsets.fromLTRB(20, 0, 20, 20),
                 ),
               ),
-              barrierDismissible: false, // Mencegah tap di luar dialog untuk menutup
+              barrierDismissible: false,
             );
           }
         } else {
           isLoading.value = false;
           if(response['message'] == "Unauthenticated.") {
             await SecureStorageService().clearAll();
-            // Clear user data and navigate to login
             Get.offAllNamed(loginRoute);
             Get.snackbar(
               "Logout",
@@ -177,22 +216,47 @@ class DashboardController extends GetxController {
     isLoading.value = true;
 
     try {
-      // Fetch transaction stats
-      final stats = await _transactionService.getDashboardStats();
-      final products = await _productService.getAllProducts();
-      final categories = await _categoryService.getAllCategories();
-      subscribe();
-      // Transaction data
-      transactionCount.value = stats['transactionCount']!.toInt();
-      transactionProfit.value = stats['profit']!; // Laba dari penjualan
+      // Get transactions based on filter
+      List<Transaction> transactions;
+      if (startDate.value != null && endDate.value != null) {
+        transactions = await _transactionService.getTransactionsByDateRange(
+          startDate.value!,
+          endDate.value!,
+        );
+      } else {
+        transactions = await _transactionService.getAllTransactions();
+      }
 
-      // Fetch income/expense stats
-      final incomeExpenseStats = await _incomeExpenseService.getStatistics();
+      // Calculate transaction stats from filtered data
+      transactionCount.value = transactions.length;
+
+      double calculatedSales = 0.0;
+      double calculatedProfit = 0.0;
+
+      for (var transaction in transactions) {
+        calculatedSales += transaction.totalAmount;
+        calculatedProfit += transaction.profit;
+      }
+
+      totalSales.value = calculatedSales;
+      transactionProfit.value = calculatedProfit;
+
+      // Get income/expense stats based on filter
+      Map<String, double> incomeExpenseStats;
+      if (startDate.value != null && endDate.value != null) {
+        incomeExpenseStats = await _incomeExpenseService.getStatistics(
+          startDate: startDate.value!,
+          endDate: endDate.value!,
+        );
+      } else {
+        incomeExpenseStats = await _incomeExpenseService.getStatistics();
+      }
+
       additionalIncome.value = incomeExpenseStats['totalIncome'] ?? 0.0;
       businessExpenses.value = incomeExpenseStats['totalExpense'] ?? 0.0;
 
-      // Calculate total revenue (laba transaksi + pendapatan income)
-      totalRevenue.value = transactionProfit.value + additionalIncome.value;
+      // Calculate total revenue (total sales + additional income)
+      totalRevenue.value = totalSales.value + additionalIncome.value;
 
       // Total expenses (hanya dari income_expense table)
       totalExpenses.value = businessExpenses.value;
@@ -201,6 +265,10 @@ class DashboardController extends GetxController {
       totalProfit.value = totalRevenue.value - totalExpenses.value;
       netBalance.value = totalProfit.value;
 
+      // Get products and categories for top lists
+      final products = await _productService.getAllProducts();
+      final categories = await _categoryService.getAllCategories();
+
       // Sort products by sold count and take top 3
       products.sort((a, b) => b.soldCount.compareTo(a.soldCount));
       topProducts.assignAll(products.take(3).toList());
@@ -208,6 +276,8 @@ class DashboardController extends GetxController {
       // Sort categories by sold count and take top 3
       categories.sort((a, b) => b.soldCount.compareTo(a.soldCount));
       topCategories.assignAll(categories.take(3).toList());
+
+      subscribe();
 
     } catch (e) {
       Get.snackbar('Error', 'Gagal memuat data dashboard: $e');
@@ -220,6 +290,7 @@ class DashboardController extends GetxController {
   Map<String, double> getRevenueBreakdown() {
     return {
       'transactionProfit': transactionProfit.value,
+      'totalSales': totalSales.value,
       'additionalIncome': additionalIncome.value,
       'totalRevenue': totalRevenue.value,
     };

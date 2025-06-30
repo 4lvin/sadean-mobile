@@ -13,7 +13,7 @@ class ReceiptView extends StatelessWidget {
   final String customerName;
   final String phoneNumber;
 
-   ReceiptView({
+  ReceiptView({
     super.key,
     required this.transaction,
     this.customerName = "Alvin",
@@ -22,6 +22,7 @@ class ReceiptView extends StatelessWidget {
 
   final BluetoothPrintService _printService = BluetoothPrintService();
   final SettingsController setController = Get.find<SettingsController>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,7 +46,10 @@ class ReceiptView extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade100,
                     borderRadius: BorderRadius.circular(20),
@@ -55,12 +59,17 @@ class ReceiptView extends StatelessWidget {
                     children: [
                       Icon(Icons.print, size: 16, color: Colors.blue.shade700),
                       const SizedBox(width: 6),
-                      Text(
-                        'Tidak ada',
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                      Obx(
+                        () => InkWell(
+                          onTap: () => _showPrinterDialog(context),
+                          child: Text(
+                            '${setController.selectedPrinter.value}',
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -69,10 +78,7 @@ class ReceiptView extends StatelessWidget {
                 const Spacer(),
                 Text(
                   'Printer',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -160,17 +166,23 @@ class ReceiptView extends StatelessWidget {
                           const SizedBox(height: 16),
 
                           // Items Section
-                          ...transaction.items.map((item) => _buildReceiptItem(item)),
+                          ...transaction.items.map(
+                            (item) => _buildReceiptItem(item),
+                          ),
 
                           const SizedBox(height: 8),
                           _buildDividerLine(),
                           const SizedBox(height: 12),
 
                           // Totals Section
-                          _buildTotalRow('Subtotal', transaction.calculatedSubtotal),
+                          _buildTotalRow(
+                            'Subtotal',
+                            transaction.calculatedSubtotal,
+                          ),
 
                           // Discount (if any)
-                          if (transaction.discount != null && transaction.discount! > 0)
+                          if (transaction.discount != null &&
+                              transaction.discount! > 0)
                             _buildTotalRow(
                               'Diskon',
                               -transaction.discount!,
@@ -178,12 +190,20 @@ class ReceiptView extends StatelessWidget {
                             ),
 
                           // Service Fee (if any)
-                          if (transaction.serviceFee != null && transaction.serviceFee! > 0)
-                            _buildTotalRow('Biaya Admin', transaction.serviceFee!),
+                          if (transaction.serviceFee != null &&
+                              transaction.serviceFee! > 0)
+                            _buildTotalRow(
+                              'Biaya Admin',
+                              transaction.serviceFee!,
+                            ),
 
                           // Shipping Cost (if any)
-                          if (transaction.shippingCost != null && transaction.shippingCost! > 0)
-                            _buildTotalRow('Ongkos Kirim', transaction.shippingCost!),
+                          if (transaction.shippingCost != null &&
+                              transaction.shippingCost! > 0)
+                            _buildTotalRow(
+                              'Ongkos Kirim',
+                              transaction.shippingCost!,
+                            ),
 
                           // Tax (if any)
                           if (transaction.tax != null && transaction.tax! > 0)
@@ -210,7 +230,10 @@ class ReceiptView extends StatelessWidget {
 
                           // Status
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
                             decoration: BoxDecoration(
                               color: _getStatusColor().withOpacity(0.2),
                               borderRadius: BorderRadius.circular(20),
@@ -260,7 +283,8 @@ class ReceiptView extends StatelessWidget {
                           ),
 
                           // Notes (if any)
-                          if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
+                          if (transaction.notes != null &&
+                              transaction.notes!.isNotEmpty) ...[
                             const SizedBox(height: 12),
                             _buildDividerLine(),
                             const SizedBox(height: 8),
@@ -311,7 +335,14 @@ class ReceiptView extends StatelessWidget {
                   // Print Button
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _showPrintDialog(),
+                      onPressed: () {
+                        if (setController.selectedPrinter.value ==
+                            'Pilih Printer') {
+                          _showPrintDialog();
+                        } else {
+                          _printTransaction(transaction);
+                        }
+                      },
                       icon: const Icon(Icons.print),
                       label: const Text('Cetak'),
                       style: OutlinedButton.styleFrom(
@@ -366,18 +397,11 @@ class ReceiptView extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
-                '${item.quantity}pcs',
-                style: const TextStyle(
-                  fontSize: 13,
-                ),
-              ),
+              Text('${item.quantity}pcs', style: const TextStyle(fontSize: 13)),
               const SizedBox(width: 16),
               Text(
                 _formatCurrency(item.unitPrice),
-                style: const TextStyle(
-                  fontSize: 13,
-                ),
+                style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(width: 16),
               SizedBox(
@@ -398,7 +422,9 @@ class ReceiptView extends StatelessWidget {
     );
   }
 
-  Widget _buildTotalRow(String label, double amount, {
+  Widget _buildTotalRow(
+    String label,
+    double amount, {
     bool isBold = false,
     bool isNegative = false,
     double fontSize = 14,
@@ -449,7 +475,8 @@ class ReceiptView extends StatelessWidget {
           ),
 
         // Exact payment case
-        if (transaction.changeAmount == 0 && transaction.amountPaid == transaction.totalAmount)
+        if (transaction.changeAmount == 0 &&
+            transaction.amountPaid == transaction.totalAmount)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
             child: Row(
@@ -457,10 +484,7 @@ class ReceiptView extends StatelessWidget {
               children: [
                 const Text(
                   'Kembali',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Pas',
@@ -481,7 +505,7 @@ class ReceiptView extends StatelessWidget {
     return Row(
       children: List.generate(
         50,
-            (index) => Expanded(
+        (index) => Expanded(
           child: Container(
             color: index % 2 == 0 ? Colors.grey[400] : Colors.transparent,
             height: 1,
@@ -568,7 +592,9 @@ class ReceiptView extends StatelessWidget {
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
-            const Text('Silakan hubungkan printer Bluetooth untuk mencetak struk.'),
+            const Text(
+              'Silakan hubungkan printer Bluetooth untuk mencetak struk.',
+            ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -577,10 +603,7 @@ class ReceiptView extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'Atur printer di menu Pengaturan',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[600],
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.blue[600]),
                   ),
                 ),
               ],
@@ -588,10 +611,7 @@ class ReceiptView extends StatelessWidget {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Tutup'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Tutup')),
           ElevatedButton(
             onPressed: () {
               Get.back();
@@ -634,7 +654,8 @@ ${'-' * 32}
     // Items
     for (var item in transaction.items) {
       receipt += '${item.productName.toUpperCase()}\n';
-      receipt += '${item.quantity}pcs x ${_formatCurrency(item.unitPrice)} = ${_formatCurrency(item.totalPrice)}\n\n';
+      receipt +=
+          '${item.quantity}pcs x ${_formatCurrency(item.unitPrice)} = ${_formatCurrency(item.totalPrice)}\n\n';
     }
 
     receipt += '''${'-' * 32}
@@ -651,7 +672,8 @@ Subtotal: ${_formatCurrency(transaction.calculatedSubtotal)}
     }
 
     if (transaction.shippingCost != null && transaction.shippingCost! > 0) {
-      receipt += 'Ongkos Kirim: ${_formatCurrency(transaction.shippingCost!)}\n';
+      receipt +=
+          'Ongkos Kirim: ${_formatCurrency(transaction.shippingCost!)}\n';
     }
 
     if (transaction.tax != null && transaction.tax! > 0) {
@@ -666,7 +688,8 @@ Pembayaran (${_getPaymentMethodText()}): ${_formatCurrency(transaction.amountPai
 
     if (transaction.changeAmount > 0) {
       receipt += 'Kembali: ${_formatCurrency(transaction.changeAmount)}\n';
-    } else if (transaction.changeAmount == 0 && transaction.amountPaid == transaction.totalAmount) {
+    } else if (transaction.changeAmount == 0 &&
+        transaction.amountPaid == transaction.totalAmount) {
       receipt += 'Kembali: Pas\n';
     }
 
@@ -685,11 +708,12 @@ Catatan: ${transaction.notes}
 
     return receipt;
   }
+
   void _printTransaction(Transaction transaction) async {
     if (setController.printers.isEmpty) {
       await _printService.startScan();
     }
-
+print(setController.selectedPrinterDevice.value);
     if (setController.selectedPrinterDevice.value != null) {
       // _printService.selectDevice(_printService.devices.first);
 
@@ -719,5 +743,53 @@ Catatan: ${transaction.notes}
     } else {
       Get.snackbar('Error', 'Tidak ditemukan printer Bluetooth');
     }
+  }
+
+  void _showPrinterDialog(BuildContext context) {
+    // Scan ulang printer saat dialog dibuka supaya daftar up to date
+    setController.scanPrinters();
+
+    Get.dialog(
+      AlertDialog(
+        title: Text("Pilih Printer"),
+        content: Obx(() {
+          if (setController.printers.isEmpty) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Sedang mencari printer..."),
+                SizedBox(height: 16),
+                CircularProgressIndicator(),
+              ],
+            );
+          }
+
+          return Obx(
+            () => SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: setController.printers.length,
+                itemBuilder: (context, index) {
+                  final device = setController.printers[index];
+                  return RadioListTile<String>(
+                    title: Text(device.name ?? 'Unknown'),
+                    value: device.name ?? 'Unknown',
+                    groupValue: setController.selectedPrinter.value,
+                    onChanged: (value) {
+                      setController.updatePrinter(value!);
+                      Get.back();
+                    },
+                  );
+                },
+              ),
+            ),
+          );
+        }),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Tutup")),
+        ],
+      ),
+    );
   }
 }
