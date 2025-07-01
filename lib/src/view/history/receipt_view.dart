@@ -1,7 +1,14 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../config/theme.dart';
 import '../../controllers/setting_controller.dart';
@@ -22,6 +29,7 @@ class ReceiptView extends StatelessWidget {
 
   final BluetoothPrintService _printService = BluetoothPrintService();
   final SettingsController setController = Get.find<SettingsController>();
+  final GlobalKey _receiptKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +75,7 @@ class ReceiptView extends StatelessWidget {
 
                   // Receipt Card
                   Container(
+                    key: _receiptKey, // Add this key
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 400),
                     decoration: BoxDecoration(
@@ -283,6 +292,404 @@ class ReceiptView extends StatelessWidget {
           _buildBottomActionButtons(),
         ],
       ),
+    );
+  }
+
+  void _shareReceipt() {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Bagikan Struk',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            Text(
+              'Pilih format berbagi',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Share format options
+            Row(
+              children: [
+                // Share as Image
+                Expanded(
+                  child: _buildShareFormatOption(
+                    icon: Icons.image,
+                    label: 'Gambar',
+                    subtitle: 'Bagikan sebagai foto',
+                    color: Colors.purple,
+                    onTap: () => _shareAsImage(),
+                  ),
+                ),
+                // const SizedBox(width: 12),
+                // // Share as Text
+                // Expanded(
+                //   child: _buildShareFormatOption(
+                //     icon: Icons.text_fields,
+                //     label: 'Teks',
+                //     subtitle: 'Bagikan sebagai teks',
+                //     color: Colors.blue,
+                //     onTap: () => _shareAsText(),
+                //   ),
+                // ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey[400]!),
+                ),
+                child: Text(
+                  'Batal',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareFormatOption({
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Share as image method
+  void _shareAsImage() async {
+    Get.back(); // Close bottom sheet
+
+    // Show loading
+    Get.dialog(
+      AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            const Text('Membuat gambar struk...'),
+          ],
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      // Capture widget as image
+      final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+
+      if (boundary == null) {
+        Get.back(); // Close loading
+        _showError('Gagal mengambil gambar struk');
+        return;
+      }
+
+      // Convert to image
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      final pngBytes = byteData!.buffer.asUint8List();
+
+      // Save to temporary file
+      final tempDir = await getTemporaryDirectory();
+      final file = await File('${tempDir.path}/struk_${transaction.id}.png').create();
+      await file.writeAsBytes(pngBytes);
+
+      Get.back(); // Close loading
+
+      // Show share options for image
+      _showImageShareOptions(file.path);
+
+    } catch (e) {
+      Get.back(); // Close loading
+      _showError('Gagal membuat gambar: $e');
+    }
+  }
+
+// Show image share options
+  void _showImageShareOptions(String imagePath) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Bagikan Gambar Struk',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Share options for image
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // WhatsApp
+                _buildShareOption(
+                  icon: Icons.chat,
+                  label: 'WhatsApp',
+                  color: Colors.green,
+                  onTap: () => _shareImageToWhatsApp(imagePath),
+                ),
+
+                // General Share
+                _buildShareOption(
+                  icon: Icons.share,
+                  label: 'Lainnya',
+                  color: Colors.blue,
+                  onTap: () => _shareImageGeneral(imagePath),
+                ),
+
+                // Save to Gallery
+                _buildShareOption(
+                  icon: Icons.download,
+                  label: 'Simpan',
+                  color: Colors.purple,
+                  onTap: () => _saveImageToGallery(imagePath),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // Cancel button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Get.back(),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: BorderSide(color: Colors.grey[400]!),
+                ),
+                child: Text(
+                  'Batal',
+                  style: TextStyle(color: Colors.grey[700]),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+// Share image to WhatsApp
+  void _shareImageToWhatsApp(String imagePath) async {
+    Get.back(); // Close bottom sheet
+
+    try {
+      final result = await Share.shareXFiles(
+        [XFile(imagePath)],
+        text: 'Struk Transaksi - ${transaction.id}',
+      );
+
+      if (result.status == ShareResultStatus.success) {
+        _showSuccess('Gambar berhasil dibagikan');
+      }
+    } catch (e) {
+      _showError('Gagal membagikan gambar: $e');
+    }
+  }
+
+// Share image via general share
+  void _shareImageGeneral(String imagePath) async {
+    Get.back(); // Close bottom sheet
+
+    try {
+      await Share.shareXFiles(
+        [XFile(imagePath)],
+        text: 'Struk Transaksi - ${transaction.id}\n\n'
+            'Customer: ${transaction.customerName ?? customerName}\n'
+            'Total: ${_formatCurrency(transaction.totalAmount)}\n'
+            'Tanggal: ${_formatDateTime(transaction.date)}',
+        subject: 'Struk Transaksi - ${transaction.id}',
+      );
+    } catch (e) {
+      _showError('Gagal membagikan gambar: $e');
+    }
+  }
+
+// Save image to gallery
+  void _saveImageToGallery(String imagePath) async {
+    Get.back(); // Close bottom sheet
+
+    try {
+      // Copy to Downloads or Pictures directory
+      final directory = await getExternalStorageDirectory();
+      if (directory != null) {
+        final newPath = '${directory.path}/struk_${transaction.id}_${DateTime.now().millisecondsSinceEpoch}.png';
+        await File(imagePath).copy(newPath);
+
+        _showSuccess('Gambar disimpan ke galeri');
+      } else {
+        _showError('Gagal mengakses penyimpanan');
+      }
+    } catch (e) {
+      _showError('Gagal menyimpan gambar: $e');
+    }
+  }
+
+  Widget _buildShareOption({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[700],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Helper methods for feedback
+  void _showSuccess(String message) {
+    Get.snackbar(
+      'Berhasil',
+      message,
+      backgroundColor: Colors.green.shade100,
+      colorText: Colors.green.shade800,
+      icon: const Icon(Icons.check_circle, color: Colors.green),
+      duration: const Duration(seconds: 3),
+      snackPosition: SnackPosition.TOP,
+    );
+  }
+
+  void _showError(String message) {
+    Get.snackbar(
+      'Error',
+      message,
+      backgroundColor: Colors.red.shade100,
+      colorText: Colors.red.shade800,
+      icon: const Icon(Icons.error_outline, color: Colors.red),
+      duration: const Duration(seconds: 4),
+      snackPosition: SnackPosition.TOP,
     );
   }
 
@@ -775,22 +1182,6 @@ class ReceiptView extends StatelessWidget {
       default:
         return transaction.paymentMethod.toUpperCase();
     }
-  }
-
-  void _shareReceipt() {
-    // Simulasi berbagi struk
-    final receiptText = _generateReceiptText();
-
-    // Copy to clipboard
-    Clipboard.setData(ClipboardData(text: receiptText));
-
-    Get.snackbar(
-      'Berhasil',
-      'Detail struk telah disalin ke clipboard',
-      backgroundColor: Colors.green.shade100,
-      colorText: Colors.green.shade800,
-      icon: const Icon(Icons.check_circle, color: Colors.green),
-    );
   }
 
   String _generateReceiptText() {
