@@ -77,14 +77,6 @@ class SettingView extends StatelessWidget {
                 color: Colors.white70,
               ),
             ),
-            // SizedBox(height: 4),
-            // Text(
-            //   controller.userPhone.value,
-            //   style: TextStyle(
-            //     fontSize: isTablet ? 16 : 14,
-            //     color: Colors.white70,
-            //   ),
-            // ),
           ],
         ),
       ),
@@ -105,44 +97,80 @@ class SettingView extends StatelessWidget {
             "Pengaturan Printer",
             [
               _buildPrinterStatusCard(context),
-              // _buildMenuTile(
-              //   context,
-              //   Icons.bluetooth_searching,
-              //   "Cari Printer",
-              //   "Scan ulang printer Bluetooth",
-              //       () => controller.scanPrinters(),
-              //   trailing: Obx(() => controller.isLoading.value
-              //       ? SizedBox(
-              //     width: 20,
-              //     height: 20,
-              //     child: CircularProgressIndicator(strokeWidth: 2),
-              //   )
-              //       : Icon(Icons.search, color: Colors.blue)
-              //   ),
-              // ),
+              _buildMenuTile(
+                context,
+                Icons.bluetooth_searching,
+                "Scan Printer",
+                "Cari printer Bluetooth tersedia",
+                    () => controller.scanPrinters(),
+                trailing: Obx(() => controller.printService.isScanning.value
+                    ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+                    : Icon(Icons.search, color: Colors.blue)),
+              ),
               _buildMenuTile(
                 context,
                 Icons.print,
                 "Pilih Printer",
-                "Terpilih: ${controller.selectedPrinter.value}",
+                "Pilih printer dari daftar",
                     () => _showPrinterDialog(context),
               ),
-              if (controller.selectedPrinterDevice.value != null)
-                _buildMenuTile(
-                  context,
-                  Icons.print_outlined,
-                  "Test Print",
-                  "Cetak struk percobaan",
-                      () => controller.testPrint(),
-                  trailing: Obx(() => controller.isPrinting.value
-                      ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                      : Icon(Icons.print_outlined, color: Colors.green)
-                  ),
-                ),
+              Obx(() {
+                if (controller.printService.selectedDevice.value != null) {
+                  return Column(
+                    children: [
+                      _buildMenuTile(
+                        context,
+                        controller.printService.isConnected.value
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        controller.printService.isConnected.value
+                            ? "Disconnect Printer"
+                            : "Connect Printer",
+                        controller.printService.isConnected.value
+                            ? "Putuskan koneksi printer"
+                            : "Hubungkan ke printer",
+                            () => controller.printService.isConnected.value
+                            ? controller.disconnectPrinter()
+                            : controller.connectPrinter(),
+                        trailing: Obx(() => controller.printService.isConnecting.value
+                            ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                            : Icon(
+                          controller.printService.isConnected.value
+                              ? Icons.bluetooth_connected
+                              : Icons.bluetooth_disabled,
+                          color: controller.printService.isConnected.value
+                              ? Colors.green
+                              : Colors.red,
+                        )),
+                      ),
+                      if (controller.printService.isConnected.value)
+                        _buildMenuTile(
+                          context,
+                          Icons.print_outlined,
+                          "Test Print",
+                          "Cetak struk percobaan",
+                              () => controller.testPrint(),
+                          trailing: Obx(() => controller.printService.isPrinting.value
+                              ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                              : Icon(Icons.print_outlined, color: Colors.green)),
+                        ),
+                    ],
+                  );
+                }
+                return SizedBox.shrink();
+              }),
             ],
           ),
           _buildMenuSection(
@@ -206,10 +234,11 @@ class SettingView extends StatelessWidget {
         ),
         child: InkWell(
           onTap: () {
-            if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) {
+            if (controller.printService.selectedDevice.value != null &&
+                !controller.printService.isConnected.value) {
               // If printer is selected but not connected, try to connect
-              controller.connectSelectedPrinter();
-            } else if (controller.selectedPrinterDevice.value == null) {
+              controller.connectPrinter();
+            } else if (controller.printService.selectedDevice.value == null) {
               // If no printer selected, show selection dialog
               _showPrinterDialog(context);
             }
@@ -248,7 +277,7 @@ class SettingView extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (controller.isConnecting.value)
+                  if (controller.printService.isConnecting.value)
                     SizedBox(
                       width: 20,
                       height: 20,
@@ -259,15 +288,32 @@ class SettingView extends StatelessWidget {
                     ),
                 ],
               ),
-              if (controller.selectedPrinterDevice.value != null) ...[
+              if (controller.printService.selectedDevice.value != null) ...[
                 SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.print, size: 16, color: Colors.grey[600]),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        controller.printService.selectedDevice.value!.name ?? "Unknown",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(Icons.bluetooth, size: 16, color: Colors.grey[600]),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'MAC: ${controller.selectedPrinterDevice.value!.address ?? "Unknown"}',
+                        'MAC: ${controller.printService.selectedDevice.value!.address ?? "Unknown"}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -281,33 +327,41 @@ class SettingView extends StatelessWidget {
             ],
           ),
         )));
-    }
+  }
 
   Color _getPrinterStatusColor() {
-    if (controller.isConnecting.value) return Colors.orange;
-    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return Colors.green;
-    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return Colors.red;
+    if (controller.printService.isConnecting.value) return Colors.orange;
+    if (controller.printService.isConnected.value &&
+        controller.printService.selectedDevice.value != null) return Colors.green;
+    if (controller.printService.selectedDevice.value != null &&
+        !controller.printService.isConnected.value) return Colors.red;
     return Colors.grey;
   }
 
   IconData _getPrinterStatusIcon() {
-    if (controller.isConnecting.value) return Icons.bluetooth_searching;
-    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return Icons.bluetooth_connected;
-    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return Icons.bluetooth_disabled;
+    if (controller.printService.isConnecting.value) return Icons.bluetooth_searching;
+    if (controller.printService.isConnected.value &&
+        controller.printService.selectedDevice.value != null) return Icons.bluetooth_connected;
+    if (controller.printService.selectedDevice.value != null &&
+        !controller.printService.isConnected.value) return Icons.bluetooth_disabled;
     return Icons.bluetooth;
   }
 
   String _getPrinterStatusTitle() {
-    if (controller.isConnecting.value) return "Menghubungkan...";
-    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return "Printer Terhubung";
-    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return "Printer Terputus";
+    if (controller.printService.isConnecting.value) return "Menghubungkan...";
+    if (controller.printService.isConnected.value &&
+        controller.printService.selectedDevice.value != null) return "Printer Terhubung";
+    if (controller.printService.selectedDevice.value != null &&
+        !controller.printService.isConnected.value) return "Printer Terputus";
     return "Belum Ada Printer";
   }
 
   String _getPrinterStatusSubtitle() {
-    if (controller.isConnecting.value) return "Sedang menghubungkan ke printer";
-    if (controller.isConnected.value && controller.selectedPrinterDevice.value != null) return "Siap untuk mencetak";
-    if (controller.selectedPrinterDevice.value != null && !controller.isConnected.value) return "Tap untuk menyambungkan";
+    if (controller.printService.isConnecting.value) return "Sedang menghubungkan ke printer";
+    if (controller.printService.isConnected.value &&
+        controller.printService.selectedDevice.value != null) return "Siap untuk mencetak";
+    if (controller.printService.selectedDevice.value != null &&
+        !controller.printService.isConnected.value) return "Tap untuk menyambungkan";
     return "Silakan pilih printer Bluetooth";
   }
 
@@ -388,7 +442,7 @@ class SettingView extends StatelessWidget {
   }
 
   void _showPrinterDialog(BuildContext context) {
-    // Scan ulang printer saat dialog dibuka supaya daftar up to date
+    // Start scanning when dialog opens
     controller.scanPrinters();
 
     Get.dialog(
@@ -403,93 +457,115 @@ class SettingView extends StatelessWidget {
         ),
         content: SizedBox(
           width: double.maxFinite,
-          height: 300,
-          child: Obx(() {
-            if (controller.isLoading.value) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text("Mencari printer..."),
-                  SizedBox(height: 8),
-                  Text(
-                    "Pastikan printer Bluetooth aktif",
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                ],
-              );
-            }
+          height: 400,
+          child: Column(
+            children: [
+              // Scanning indicator
+              Obx(() {
+                if (controller.printService.isScanning.value) {
+                  return Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        SizedBox(width: 12),
+                        Text(
+                          "Mencari printer...",
+                          style: TextStyle(color: Colors.blue.shade700),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return SizedBox.shrink();
+              }),
 
-            if (controller.printers.isEmpty) {
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.bluetooth_disabled, size: 64, color: Colors.grey[400]),
-                  SizedBox(height: 16),
-                  Text("Tidak ditemukan printer"),
-                  SizedBox(height: 8),
-                  Text(
-                    "Pastikan printer Bluetooth aktif dan dalam jangkauan",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => controller.scanPrinters(),
-                    icon: Icon(Icons.refresh, size: 20),
-                    label: Text("Scan Ulang"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ],
-              );
-            }
+              SizedBox(height: 8),
 
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: controller.printers.length,
-              itemBuilder: (context, index) {
-                final device = controller.printers[index];
-                final isSelected = controller.selectedPrinter.value == (device.name ?? 'Unknown');
+              // Device list
+              Expanded(
+                child: Obx(() {
+                  if (controller.printService.devices.isEmpty &&
+                      !controller.printService.isScanning.value) {
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.bluetooth_disabled, size: 64, color: Colors.grey[400]),
+                        SizedBox(height: 16),
+                        Text("Tidak ditemukan printer"),
+                        SizedBox(height: 8),
+                        Text(
+                          "Pastikan printer Bluetooth aktif dan dalam mode pairing",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => controller.scanPrinters(),
+                          icon: Icon(Icons.refresh, size: 20),
+                          label: Text("Scan Ulang"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
 
-                return Card(
-                  margin: EdgeInsets.only(bottom: 8),
-                  color: isSelected ? Colors.blue.shade50 : null,
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.print,
-                      color: isSelected ? Colors.blue : Colors.grey[600],
-                    ),
-                    title: Text(
-                      device.name ?? 'Unknown Device',
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.blue : null,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'MAC: ${device.address ?? "Unknown"}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    trailing: isSelected
-                        ? Icon(Icons.check_circle, color: Colors.green)
-                        : null,
-                    onTap: () {
-                      controller.updatePrinter(device.name ?? 'Unknown');
-                      Get.back();
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: controller.printService.devices.length,
+                    itemBuilder: (context, index) {
+                      final device = controller.printService.devices[index];
+                      final isSelected = controller.printService.selectedDevice.value?.address == device.address;
+
+                      return Card(
+                        margin: EdgeInsets.only(bottom: 8),
+                        color: isSelected ? Colors.blue.shade50 : null,
+                        child: ListTile(
+                          leading: Icon(
+                            Icons.print,
+                            color: isSelected ? Colors.blue : Colors.grey[600],
+                          ),
+                          title: Text(
+                            device.name ?? 'Unknown Device',
+                            style: TextStyle(
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected ? Colors.blue : null,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'MAC: ${device.address ?? "Unknown"}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          trailing: isSelected
+                              ? Icon(Icons.check_circle, color: Colors.green)
+                              : null,
+                          onTap: () {
+                            controller.selectPrinter(index);
+                            Get.back();
+                          },
+                        ),
+                      );
                     },
-                  ),
-                );
-              },
-            );
-          }),
+                  );
+                }),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

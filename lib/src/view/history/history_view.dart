@@ -1213,11 +1213,11 @@ class HistoryView extends StatelessWidget {
   }
 
   void _printTransaction(Transaction transaction) async {
-    if (setController.printers.isEmpty) {
+    if (setController.printService.devices.isEmpty) {
       await _printService.startScan();
     }
 
-    if (setController.selectedPrinterDevice.value != null) {
+    if (setController.printService.selectedDevice.value != null) {
       try {
         await setController.printTransaction(
           customerName: "SADEAN",
