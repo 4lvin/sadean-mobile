@@ -295,6 +295,7 @@ class ImprovedBluetoothPrintService extends GetxController {
     required String paymentMethod,
     required String transactionId,
     required DateTime dateTime,
+    String? footerNote,
   }) async {
     if (!isConnected.value) {
       _showError('Printer tidak terhubung');
@@ -414,10 +415,22 @@ class ImprovedBluetoothPrintService extends GetxController {
         alignment: bt.Alignment.center,
         style: EscTextStyle.bold,
       );
-      await _esc.text(
-        content: _centerText('SELAMAT BERBELANJA', lineWidth),
-        alignment: bt.Alignment.center,
-      );
+      if (footerNote != null && footerNote.isNotEmpty) {
+        await _esc.text(content: '');
+        List<String> footerLines = _splitText(footerNote, lineWidth);
+        for (String line in footerLines) {
+          await _esc.text(
+            content: _centerText(line, lineWidth),
+            alignment: bt.Alignment.center,
+          );
+        }
+      } else {
+        // Default footer if no custom note
+        await _esc.text(
+          content: _centerText('SELAMAT BERBELANJA', lineWidth),
+          alignment: bt.Alignment.center,
+        );
+      }
 
       // Cut line and spacing
       await _esc.text(content: '');

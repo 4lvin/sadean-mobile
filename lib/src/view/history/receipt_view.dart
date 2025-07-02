@@ -99,21 +99,21 @@ class ReceiptView extends StatelessWidget {
                         children: [
                           // Header - Store Name & Customer Info
                           Text(
-                            transaction.customerName ?? customerName,
+                            setController.storeName.value,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           Text(
-                            'Pandaan',
+                            setController.storeAddress.value,
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.grey[600],
                             ),
                           ),
                           Text(
-                            phoneNumber,
+                            setController.storePhone.value,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -565,9 +565,9 @@ class ReceiptView extends StatelessWidget {
   void _printTransaction() async {
     try {
       await printService.printReceipt(
-        storeName: transaction.customerName ?? customerName,
-        storeAddress: "Pandaan",
-        storePhone: phoneNumber,
+        storeName: setController.storeName.value,
+        storeAddress: setController.storeAddress.value,
+        storePhone: setController.storePhone.value,
         items: transaction.items,
         subtotal: transaction.calculatedSubtotal,
         adminFee: transaction.serviceFee ?? 0.0,
@@ -577,6 +577,9 @@ class ReceiptView extends StatelessWidget {
         paymentMethod: _getPaymentMethodText(),
         transactionId: transaction.id,
         dateTime: transaction.date,
+        footerNote: setController.receiptFooterNote.value.isNotEmpty
+            ? setController.receiptFooterNote.value
+            : null,
       );
     } catch (e) {
       print('Print error in receipt view: $e');

@@ -27,6 +27,12 @@ class SettingsController extends GetxController {
   var selectedCurrency = "IDR".obs;
   var selectedPaymentMethod = "Cash".obs;
 
+  // Receipt Settings
+  var storeName = "SADEAN".obs;
+  var storeAddress = "Pandaan, Pasuruan".obs;
+  var storePhone = "085736710089".obs;
+  var receiptFooterNote = "Terima kasih atas kunjungan Anda".obs;
+
   // Bluetooth print service
   late ImprovedBluetoothPrintService printService;
 
@@ -88,6 +94,26 @@ class SettingsController extends GetxController {
         selectedPaymentMethod.value = paymentMethod;
       }
 
+      final storeNameData = await _storage.read(key: 'store_name');
+      if (storeNameData != null) {
+        storeName.value = storeNameData;
+      }
+
+      final storeAddressData = await _storage.read(key: 'store_address');
+      if (storeAddressData != null) {
+        storeAddress.value = storeAddressData;
+      }
+
+      final storePhoneData = await _storage.read(key: 'store_phone');
+      if (storePhoneData != null) {
+        storePhone.value = storePhoneData;
+      }
+
+      final footerNote = await _storage.read(key: 'receipt_footer_note');
+      if (footerNote != null) {
+        receiptFooterNote.value = footerNote;
+      }
+
       // Load saved printer
       await _loadSavedPrinter();
     } catch (e) {
@@ -145,6 +171,24 @@ class SettingsController extends GetxController {
       await _storage.write(
         key: 'selected_payment_method',
         value: selectedPaymentMethod.value,
+      );
+
+      // Save receipt settings
+      await _storage.write(
+        key: 'store_name',
+        value: storeName.value,
+      );
+      await _storage.write(
+        key: 'store_address',
+        value: storeAddress.value,
+      );
+      await _storage.write(
+        key: 'store_phone',
+        value: storePhone.value,
+      );
+      await _storage.write(
+        key: 'receipt_footer_note',
+        value: receiptFooterNote.value,
       );
 
       // Save selected printer
@@ -282,6 +326,7 @@ class SettingsController extends GetxController {
     required String change,
     required String status,
     required String trxCode,
+    required String footerNote,
   }) async {
     try {
       // Parse amounts
@@ -307,6 +352,7 @@ class SettingsController extends GetxController {
         paymentMethod: selectedPaymentMethod.value,
         transactionId: trxCode,
         dateTime: transactionDate,
+        footerNote: footerNote
       );
     } catch (e) {
       print("Print transaction error: $e");
@@ -348,6 +394,100 @@ class SettingsController extends GetxController {
       return 'RM${amount.toStringAsFixed(2)}';
     }
     return amount.toStringAsFixed(2);
+  }
+
+  // Show receipt settings dialog
+  void showReceiptSettingsDialog() {
+    final storeNameController = TextEditingController(text: storeName.value);
+    final storeAddressController = TextEditingController(text: storeAddress.value);
+    final storePhoneController = TextEditingController(text: storePhone.value);
+    final footerNoteController = TextEditingController(text: receiptFooterNote.value);
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.receipt_long, color: Colors.blue),
+            SizedBox(width: 12),
+            Text('Pengaturan Struk'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: SizedBox(
+            width: Get.width * 0.8,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: storeNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Nama Toko',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.store),
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: storeAddressController,
+                  decoration: InputDecoration(
+                    labelText: 'Alamat Toko',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_on),
+                  ),
+                  maxLines: 2,
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: storePhoneController,
+                  decoration: InputDecoration(
+                    labelText: 'No. Telepon',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.phone),
+                  ),
+                  keyboardType: TextInputType.phone,
+                ),
+                SizedBox(height: 16),
+                TextField(
+                  controller: footerNoteController,
+                  decoration: InputDecoration(
+                    labelText: 'Catatan Footer',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.note),
+                    hintText: 'Contoh: Terima kasih atas kunjungan Anda',
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              storeName.value = storeNameController.text;
+              storeAddress.value = storeAddressController.text;
+              storePhone.value = storePhoneController.text;
+              receiptFooterNote.value = footerNoteController.text;
+
+              saveSettings();
+              Get.back();
+              Get.snackbar(
+                'Berhasil',
+                'Pengaturan struk berhasil disimpan',
+                backgroundColor: Colors.green.shade100,
+                colorText: Colors.green.shade800,
+              );
+            },
+            child: Text('Simpan'),
+          ),
+        ],
+      ),
+    );
   }
 
   void showFAQ() {

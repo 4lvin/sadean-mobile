@@ -92,129 +92,162 @@ class SettingView extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: isTablet ? 20 : 0),
       child: Column(
         children: [
-          _buildMenuSection(
-            context,
-            "Pengaturan Printer",
-            [
-              _buildPrinterStatusCard(context),
-              _buildMenuTile(
-                context,
-                Icons.bluetooth_searching,
-                "Scan Printer",
-                "Cari printer Bluetooth tersedia",
-                    () => controller.scanPrinters(),
-                trailing: Obx(() => controller.printService.isScanning.value
-                    ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                    : Icon(Icons.search, color: Colors.blue)),
-              ),
-              _buildMenuTile(
-                context,
-                Icons.print,
-                "Pilih Printer",
-                "Pilih printer dari daftar",
-                    () => _showPrinterDialog(context),
-              ),
-              Obx(() {
-                if (controller.printService.selectedDevice.value != null) {
-                  return Column(
-                    children: [
-                      _buildMenuTile(
-                        context,
-                        controller.printService.isConnected.value
-                            ? Icons.bluetooth_connected
-                            : Icons.bluetooth_disabled,
-                        controller.printService.isConnected.value
-                            ? "Disconnect Printer"
-                            : "Connect Printer",
-                        controller.printService.isConnected.value
-                            ? "Putuskan koneksi printer"
-                            : "Hubungkan ke printer",
-                            () => controller.printService.isConnected.value
-                            ? controller.disconnectPrinter()
-                            : controller.connectPrinter(),
-                        trailing: Obx(() => controller.printService.isConnecting.value
-                            ? SizedBox(
+          _buildMenuSection(context, "Pengaturan Printer", [
+            _buildPrinterStatusCard(context),
+            _buildMenuTile(
+              context,
+              Icons.bluetooth_searching,
+              "Scan Printer",
+              "Cari printer Bluetooth tersedia",
+              () => controller.scanPrinters(),
+              trailing: Obx(
+                () =>
+                    controller.printService.isScanning.value
+                        ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                            : Icon(
+                        : Icon(Icons.search, color: Colors.blue),
+              ),
+            ),
+            _buildMenuTile(
+              context,
+              Icons.print,
+              "Pilih Printer",
+              "Pilih printer dari daftar",
+              () => _showPrinterDialog(context),
+            ),
+            Obx(() {
+              if (controller.printService.selectedDevice.value != null) {
+                return Column(
+                  children: [
+                    _buildMenuTile(
+                      context,
+                      controller.printService.isConnected.value
+                          ? Icons.bluetooth_connected
+                          : Icons.bluetooth_disabled,
+                      controller.printService.isConnected.value
+                          ? "Disconnect Printer"
+                          : "Connect Printer",
+                      controller.printService.isConnected.value
+                          ? "Putuskan koneksi printer"
+                          : "Hubungkan ke printer",
+                      () =>
                           controller.printService.isConnected.value
-                              ? Icons.bluetooth_connected
-                              : Icons.bluetooth_disabled,
-                          color: controller.printService.isConnected.value
-                              ? Colors.green
-                              : Colors.red,
-                        )),
+                              ? controller.disconnectPrinter()
+                              : controller.connectPrinter(),
+                      trailing: Obx(
+                        () =>
+                            controller.printService.isConnecting.value
+                                ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : Icon(
+                                  controller.printService.isConnected.value
+                                      ? Icons.bluetooth_connected
+                                      : Icons.bluetooth_disabled,
+                                  color:
+                                      controller.printService.isConnected.value
+                                          ? Colors.green
+                                          : Colors.red,
+                                ),
                       ),
-                      if (controller.printService.isConnected.value)
-                        _buildMenuTile(
-                          context,
-                          Icons.print_outlined,
-                          "Test Print",
-                          "Cetak struk percobaan",
-                              () => controller.testPrint(),
-                          trailing: Obx(() => controller.printService.isPrinting.value
-                              ? SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                              : Icon(Icons.print_outlined, color: Colors.green)),
+                    ),
+                    if (controller.printService.isConnected.value)
+                      _buildMenuTile(
+                        context,
+                        Icons.print_outlined,
+                        "Test Print",
+                        "Cetak struk percobaan",
+                        () => controller.testPrint(),
+                        trailing: Obx(
+                          () =>
+                              controller.printService.isPrinting.value
+                                  ? SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : Icon(
+                                    Icons.print_outlined,
+                                    color: Colors.green,
+                                  ),
                         ),
-                    ],
-                  );
-                }
-                return SizedBox.shrink();
-              }),
-            ],
-          ),
+                      ),
+                  ],
+                );
+              }
+              return SizedBox.shrink();
+            }),
+            _buildMenuTile(
+              context,
+              Icons.receipt_long,
+              "Pengaturan Struk",
+              "Atur nama toko, alamat, dan info struk",
+                  () => controller.showReceiptSettingsDialog(),
+            ),
+          ]),
           _buildMenuSection(
             context,
-            "Bantuan & Info",
+            "Manajemen Data",
             [
               _buildMenuTile(
                 context,
-                Icons.help_outline,
-                "FAQ",
-                "Pertanyaan yang sering ditanyakan",
-                controller.showFAQ,
+                Icons.cloud_upload_outlined,
+                "Upload Data",
+                "Upload data transaksi ke cloud",
+                    () => Get.snackbar('Info', 'Fitur ini akan segera hadir!'),
               ),
               _buildMenuTile(
                 context,
-                Icons.privacy_tip_outlined,
-                "Kebijakan Privasi",
-                "Baca kebijakan privasi kami",
-                controller.showPrivacyPolicy,
-              ),
-              _buildMenuTile(
-                context,
-                Icons.contact_support_outlined,
-                "Hubungi Kami",
-                "Butuh bantuan? Hubungi support",
-                controller.contactUs,
+                Icons.cloud_download_outlined,
+                "Import Data",
+                "Import data transaksi dari file",
+                    () => Get.snackbar('Info', 'Fitur ini akan segera hadir!'),
               ),
             ],
           ),
-          _buildMenuSection(
-            context,
-            "Akun",
-            [
-              _buildMenuTile(
-                context,
-                Icons.logout,
-                "Logout",
-                "Keluar dari aplikasi",
-                controller.logout,
-                textColor: Colors.red,
-                iconColor: Colors.red,
-              ),
-            ],
-          ),
+          _buildMenuSection(context, "Bantuan & Info", [
+            _buildMenuTile(
+              context,
+              Icons.help_outline,
+              "FAQ",
+              "Pertanyaan yang sering ditanyakan",
+              controller.showFAQ,
+            ),
+            _buildMenuTile(
+              context,
+              Icons.privacy_tip_outlined,
+              "Kebijakan Privasi",
+              "Baca kebijakan privasi kami",
+              controller.showPrivacyPolicy,
+            ),
+            _buildMenuTile(
+              context,
+              Icons.contact_support_outlined,
+              "Hubungi Kami",
+              "Butuh bantuan? Hubungi support",
+              controller.contactUs,
+            ),
+          ]),
+          _buildMenuSection(context, "Akun", [
+            _buildMenuTile(
+              context,
+              Icons.logout,
+              "Logout",
+              "Keluar dari aplikasi",
+              controller.logout,
+              textColor: Colors.red,
+              iconColor: Colors.red,
+            ),
+          ]),
           SizedBox(height: 60),
         ],
       ),
@@ -224,8 +257,12 @@ class SettingView extends StatelessWidget {
   Widget _buildPrinterStatusCard(BuildContext context) {
     bool isTablet = MediaQuery.of(context).size.width > 600;
 
-    return Obx(() => Container(
-        margin: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 16, vertical: 8),
+    return Obx(
+      () => Container(
+        margin: EdgeInsets.symmetric(
+          horizontal: isTablet ? 8 : 16,
+          vertical: 8,
+        ),
         padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _getPrinterStatusColor().withOpacity(0.1),
@@ -283,7 +320,9 @@ class SettingView extends StatelessWidget {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(_getPrinterStatusColor()),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          _getPrinterStatusColor(),
+                        ),
                       ),
                     ),
                 ],
@@ -296,7 +335,8 @@ class SettingView extends StatelessWidget {
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        controller.printService.selectedDevice.value!.name ?? "Unknown",
+                        controller.printService.selectedDevice.value!.name ??
+                            "Unknown",
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -326,46 +366,62 @@ class SettingView extends StatelessWidget {
               ],
             ],
           ),
-        )));
+        ),
+      ),
+    );
   }
 
   Color _getPrinterStatusColor() {
     if (controller.printService.isConnecting.value) return Colors.orange;
     if (controller.printService.isConnected.value &&
-        controller.printService.selectedDevice.value != null) return Colors.green;
+        controller.printService.selectedDevice.value != null)
+      return Colors.green;
     if (controller.printService.selectedDevice.value != null &&
-        !controller.printService.isConnected.value) return Colors.red;
+        !controller.printService.isConnected.value)
+      return Colors.red;
     return Colors.grey;
   }
 
   IconData _getPrinterStatusIcon() {
-    if (controller.printService.isConnecting.value) return Icons.bluetooth_searching;
+    if (controller.printService.isConnecting.value)
+      return Icons.bluetooth_searching;
     if (controller.printService.isConnected.value &&
-        controller.printService.selectedDevice.value != null) return Icons.bluetooth_connected;
+        controller.printService.selectedDevice.value != null)
+      return Icons.bluetooth_connected;
     if (controller.printService.selectedDevice.value != null &&
-        !controller.printService.isConnected.value) return Icons.bluetooth_disabled;
+        !controller.printService.isConnected.value)
+      return Icons.bluetooth_disabled;
     return Icons.bluetooth;
   }
 
   String _getPrinterStatusTitle() {
     if (controller.printService.isConnecting.value) return "Menghubungkan...";
     if (controller.printService.isConnected.value &&
-        controller.printService.selectedDevice.value != null) return "Printer Terhubung";
+        controller.printService.selectedDevice.value != null)
+      return "Printer Terhubung";
     if (controller.printService.selectedDevice.value != null &&
-        !controller.printService.isConnected.value) return "Printer Terputus";
+        !controller.printService.isConnected.value)
+      return "Printer Terputus";
     return "Belum Ada Printer";
   }
 
   String _getPrinterStatusSubtitle() {
-    if (controller.printService.isConnecting.value) return "Sedang menghubungkan ke printer";
+    if (controller.printService.isConnecting.value)
+      return "Sedang menghubungkan ke printer";
     if (controller.printService.isConnected.value &&
-        controller.printService.selectedDevice.value != null) return "Siap untuk mencetak";
+        controller.printService.selectedDevice.value != null)
+      return "Siap untuk mencetak";
     if (controller.printService.selectedDevice.value != null &&
-        !controller.printService.isConnected.value) return "Tap untuk menyambungkan";
+        !controller.printService.isConnected.value)
+      return "Tap untuk menyambungkan";
     return "Silakan pilih printer Bluetooth";
   }
 
-  Widget _buildMenuSection(BuildContext context, String title, List<Widget> items) {
+  Widget _buildMenuSection(
+    BuildContext context,
+    String title,
+    List<Widget> items,
+  ) {
     bool isTablet = MediaQuery.of(context).size.width > 600;
 
     return Column(
@@ -396,15 +452,15 @@ class SettingView extends StatelessWidget {
   }
 
   Widget _buildMenuTile(
-      BuildContext context,
-      IconData icon,
-      String title,
-      String subtitle,
-      VoidCallback onTap, {
-        Color? textColor,
-        Color? iconColor,
-        Widget? trailing,
-      }) {
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap, {
+    Color? textColor,
+    Color? iconColor,
+    Widget? trailing,
+  }) {
     bool isTablet = MediaQuery.of(context).size.width > 600;
 
     return ListTile(
@@ -423,16 +479,15 @@ class SettingView extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(
-          fontSize: isTablet ? 14 : 12,
-          color: Colors.grey[600],
-        ),
+        style: TextStyle(fontSize: isTablet ? 14 : 12, color: Colors.grey[600]),
       ),
-      trailing: trailing ?? Icon(
-        Icons.chevron_right,
-        color: Colors.grey[400],
-        size: isTablet ? 24 : 20,
-      ),
+      trailing:
+          trailing ??
+          Icon(
+            Icons.chevron_right,
+            color: Colors.grey[400],
+            size: isTablet ? 24 : 20,
+          ),
       contentPadding: EdgeInsets.symmetric(
         horizontal: isTablet ? 24 : 16,
         vertical: isTablet ? 8 : 4,
@@ -498,14 +553,21 @@ class SettingView extends StatelessWidget {
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.bluetooth_disabled, size: 64, color: Colors.grey[400]),
+                        Icon(
+                          Icons.bluetooth_disabled,
+                          size: 64,
+                          color: Colors.grey[400],
+                        ),
                         SizedBox(height: 16),
                         Text("Tidak ditemukan printer"),
                         SizedBox(height: 8),
                         Text(
                           "Pastikan printer Bluetooth aktif dan dalam mode pairing",
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
                         ),
                         SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -526,7 +588,13 @@ class SettingView extends StatelessWidget {
                     itemCount: controller.printService.devices.length,
                     itemBuilder: (context, index) {
                       final device = controller.printService.devices[index];
-                      final isSelected = controller.printService.selectedDevice.value?.address == device.address;
+                      final isSelected =
+                          controller
+                              .printService
+                              .selectedDevice
+                              .value
+                              ?.address ==
+                          device.address;
 
                       return Card(
                         margin: EdgeInsets.only(bottom: 8),
@@ -539,7 +607,10 @@ class SettingView extends StatelessWidget {
                           title: Text(
                             device.name ?? 'Unknown Device',
                             style: TextStyle(
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontWeight:
+                                  isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                               color: isSelected ? Colors.blue : null,
                             ),
                           ),
@@ -551,9 +622,13 @@ class SettingView extends StatelessWidget {
                               color: Colors.grey[600],
                             ),
                           ),
-                          trailing: isSelected
-                              ? Icon(Icons.check_circle, color: Colors.green)
-                              : null,
+                          trailing:
+                              isSelected
+                                  ? Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                  )
+                                  : null,
                           onTap: () {
                             controller.selectPrinter(index);
                             Get.back();
@@ -568,10 +643,7 @@ class SettingView extends StatelessWidget {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text("Tutup"),
-          ),
+          TextButton(onPressed: () => Get.back(), child: Text("Tutup")),
           ElevatedButton.icon(
             onPressed: () => controller.scanPrinters(),
             icon: Icon(Icons.refresh, size: 20),

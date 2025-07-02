@@ -1220,9 +1220,9 @@ class HistoryView extends StatelessWidget {
     if (setController.printService.selectedDevice.value != null) {
       try {
         await setController.printTransaction(
-          customerName: "SADEAN",
-          customerLocation: "PANDAAN",
-          customerPhone: "085736710089",
+          customerName: setController.storeName.value,
+          customerLocation: setController.storeAddress.value,
+          customerPhone: setController.storePhone.value,
           dateTime: DateTime.now().toString(),
           items: transaction.items,
           subtotal: 'Rp ${transaction.subtotal.toString()}',
@@ -1232,6 +1232,9 @@ class HistoryView extends StatelessWidget {
           change: 'Rp ${transaction.changeAmount.toString()}',
           status: 'LUNAS',
           trxCode: 'TRX-${transaction.id}',
+          footerNote: setController.receiptFooterNote.value.isNotEmpty
+              ? setController.receiptFooterNote.value
+              : "",
         );
       } catch (e) {
         Get.snackbar('Error', e.toString());
