@@ -309,112 +309,106 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       // Optimal width for 58mm thermal paper
       const int lineWidth = 32;
-      const String separator = '--------------------------------';
-      const String thinSeparator = '................................';
+      const String separator = '--------------------------------'; // Full width separator
+      const String thinSeparator = '................................'; // Dashed line separator
 
       // Header - Store Info
+      await _esc.text(content: ''); // Top spacing
       await _esc.text(
         content: _centerText(storeName, lineWidth),
         alignment: bt.Alignment.center,
         style: EscTextStyle.bold,
+        fontSize: EscFontSize.size2, // Larger for store name
       );
-
-      // Store address - split if too long
+      // Split and center address if too long
       List<String> addressLines = _splitText(storeAddress, lineWidth);
       for (String line in addressLines) {
-        await _esc.text(
-          content: _centerText(line, lineWidth),
-          alignment: bt.Alignment.center,
-        );
+        await _esc.text(content: _centerText(line, lineWidth), alignment: bt.Alignment.center);
       }
-
-      await _esc.text(
-        content: _centerText(storePhone, lineWidth),
-        alignment: bt.Alignment.center,
-      );
+      await _esc.text(content: _centerText(storePhone, lineWidth), alignment: bt.Alignment.center);
+      await _esc.text(content: ''); // Spacing after contact info
 
       await _esc.text(content: separator);
 
       // Transaction header
-      await _esc.text(
-        content: _centerText('NOTA TRANSAKSI', lineWidth),
-        alignment: bt.Alignment.center,
-        style: EscTextStyle.bold,
-      );
-      await _esc.text(content: thinSeparator);
+      await _esc.text(content: _centerText('NOTA TRANSAKSI', lineWidth), alignment: bt.Alignment.center, style: EscTextStyle.bold, fontSize: EscFontSize.size1);
+      await _esc.text(content: thinSeparator); // Dashed line
 
-      // Date and time
-      final dateStr = '${dateTime.day.toString().padLeft(2, '0')}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.year}';
-      final timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      // Date, Time and Transaction ID with precise alignment
+      final dateStr = DateFormat('dd-MM-yyyy').format(dateTime);
+      final timeStr = DateFormat('HH:mm').format(dateTime);
 
-      await _esc.text(content: 'Tanggal: $dateStr');
-      await _esc.text(content: 'Waktu  : $timeStr');
-      await _esc.text(content: 'No.Ref : $transactionId');
+      await _esc.text(content: _leftRightPadded('Tanggal:', dateStr, lineWidth));
+      await _esc.text(content: _leftRightPadded('Waktu  :', timeStr, lineWidth));
+      await _esc.text(content: _leftRightPadded('No.Ref :', transactionId, lineWidth));
+      await _esc.text(content: ''); // Spacing
+
       await _esc.text(content: separator);
 
       // Items header
-      await _esc.text(content: 'ITEM PEMBELIAN');
-      await _esc.text(content: thinSeparator);
+      await _esc.text(content: _centerText('ITEM PEMBELI', lineWidth), alignment: bt.Alignment.center, style: EscTextStyle.bold, fontSize: EscFontSize.size1);
+      await _esc.text(content: thinSeparator); // Dashed line
 
       // Items list
-      for (var item in items) {
-        // Product name - allow wrapping for long names
-        List<String> nameLines = _splitText(item.productName, lineWidth);
-        for (String line in nameLines) {
-          await _esc.text(content: line);
+      for (final item in items) {
+        // Product name - might wrap, always bold
+        List<String> nameLines = _splitText(item.productName.toUpperCase(), lineWidth);
+        for (final line in nameLines) {
+          await _esc.text(content: line, style: EscTextStyle.bold);
         }
 
-        // Quantity, price, and total
-        String qtyLine = '${item.quantity} x ${_formatCurrency(item.unitPrice)}';
-        String totalLine = _formatCurrency(item.totalPrice);
-
-        await _esc.text(content: _createRightAlignedLine(qtyLine, totalLine, lineWidth));
-        await _esc.text(content: ''); // Space between items
+        // Quantity, unit price and total price on next line, precisely aligned
+        final qtyText = '${item.quantity} X ${_formatCurrency(item.unitPrice)}';
+        final itemTotalText = _formatCurrency(item.totalPrice);
+        await _esc.text(content: _leftRightPadded(qtyText, itemTotalText, lineWidth));
+        await _esc.text(content: ''); // Spacing between items
       }
 
-      await _esc.text(content: thinSeparator);
+      await _esc.text(content: thinSeparator); // Dashed line
 
       // Summary section
-      await _esc.text(content: _createSpacedLine('Subtotal', _formatCurrency(subtotal), lineWidth));
+      await _esc.text(content: _leftRightPadded('Subtotal', _formatCurrency(subtotal), lineWidth));
 
       if (adminFee > 0) {
-        await _esc.text(content: _createSpacedLine('Admin', _formatCurrency(adminFee), lineWidth));
+        await _esc.text(content: _leftRightPadded('Admin', _formatCurrency(adminFee), lineWidth));
       }
+      // if (tax > 0) {
+      //   await _esc.text(content: _leftRightPadded('Pajak', _formatCurrency(tax), lineWidth));
+      // }
+      // if (shippingCost > 0) {
+      //   await _esc.text(content: _leftRightPadded('Ongkir', _formatCurrency(shippingCost), lineWidth));
+      // }
+      await _esc.text(content: separator); // Full separator
 
-      await _esc.text(content: separator);
-
+      // TOTAL amount - larger and bold
       await _esc.text(
-        content: _createSpacedLine('TOTAL', _formatCurrency(total), lineWidth),
+        content: _leftRightPadded('TOTAL', _formatCurrency(total), lineWidth),
         style: EscTextStyle.bold,
+        fontSize: EscFontSize.size2, // Significantly larger for emphasis
       );
 
-      await _esc.text(content: separator);
+      await _esc.text(content: separator); // Full separator
 
       // Payment section
-      await _esc.text(content: _createSpacedLine('Bayar', _formatCurrency(payment), lineWidth));
-      await _esc.text(content: _createSpacedLine('Kembali', _formatCurrency(change), lineWidth));
+      await _esc.text(content: _leftRightPadded('Bayar', _formatCurrency(payment), lineWidth));
+      await _esc.text(content: _leftRightPadded('Kembali', _formatCurrency(change), lineWidth));
+      await _esc.text(content: ''); // Spacing
 
-      await _esc.text(content: '');
-      await _esc.text(
-        content: _centerText('Metode: $paymentMethod', lineWidth),
-        alignment: bt.Alignment.center,
-      );
+      await _esc.text(content: _centerText('Metode: $paymentMethod', lineWidth), alignment: bt.Alignment.center);
 
-      await _esc.text(content: '');
+      await _esc.text(content: ''); // Spacing
       await _esc.text(
-        content: _centerText('=== LUNAS ===', lineWidth),
+        content: _centerText('=== LUNAS ===', lineWidth), // Payment status
         alignment: bt.Alignment.center,
         style: EscTextStyle.bold,
+        fontSize: EscFontSize.size1,
       );
 
-      await _esc.text(content: separator);
+      await _esc.text(content: thinSeparator); // Dashed line before footer
 
       // Footer
-      await _esc.text(
-        content: _centerText('TERIMA KASIH', lineWidth),
-        alignment: bt.Alignment.center,
-        style: EscTextStyle.bold,
-      );
+      await _esc.text(content: _centerText('TERIMA KASIH', lineWidth), alignment: bt.Alignment.center, style: EscTextStyle.bold);
+
       if (footerNote != null && footerNote.isNotEmpty) {
         await _esc.text(content: '');
         List<String> footerLines = _splitText(footerNote, lineWidth);
@@ -431,6 +425,8 @@ class ImprovedBluetoothPrintService extends GetxController {
           alignment: bt.Alignment.center,
         );
       }
+
+      await _esc.text(content: _centerText('Terakhir diperbarui: ${DateFormat('dd-MM-yyyy HH:mm').format(DateTime.now())}', lineWidth), alignment: bt.Alignment.center);
 
       // Cut line and spacing
       await _esc.text(content: '');
@@ -462,35 +458,36 @@ class ImprovedBluetoothPrintService extends GetxController {
   }
 
   // Helper methods optimized for 58mm paper
-  String _centerText(String text, int width) {
-    if (text.length >= width) return text;
-    int spaces = (width - text.length) ~/ 2;
-    return (' ' * spaces) + text;
+  // --- Helper methods for precise text formatting ---
+
+  // Centers text within lineWidth, ensuring exact width.
+  String _centerText(String text, int lineWidth) {
+    if (text.length >= lineWidth) {
+      return text.substring(0, lineWidth); // Truncate if too long
+    }
+    final int pad = (lineWidth - text.length) ~/ 2;
+    return text.padLeft(text.length + pad).padRight(lineWidth);
   }
 
-  String _createSpacedLine(String left, String right, int width) {
-    // For 58mm paper, we need tighter control
-    int maxLeftLength = width - right.length - 1;
-    String truncatedLeft = left.length > maxLeftLength
-        ? left.substring(0, maxLeftLength - 2) + '..'
-        : left;
+  // Aligns left and right text precisely within lineWidth.
+  // Truncates leftText if necessary, ensuring rightText is always visible.
+  String _leftRightPadded(String leftText, String rightText, int lineWidth) {
+    int maxLeftLength = lineWidth - rightText.length;
+    if (maxLeftLength < 1) { // If no space for left text (or less than 1 char space)
+      return rightText.padLeft(lineWidth); // Just print right text, right-aligned
+    }
 
-    int totalUsed = truncatedLeft.length + right.length;
-    int spaces = width - totalUsed;
-    if (spaces < 1) spaces = 1;
+    String formattedLeft = leftText;
+    if (leftText.length > maxLeftLength) {
+      formattedLeft = leftText.substring(0, maxLeftLength - 1) + '.'; // Truncate with '.'
+    }
 
-    return '$truncatedLeft${' ' * spaces}$right';
+    final int padding = lineWidth - formattedLeft.length - rightText.length;
+    return formattedLeft + ' ' * (padding > 0 ? padding : 1) + rightText;
   }
 
-  String _createRightAlignedLine(String left, String right, int width) {
-    // For quantity and price info
-    int totalUsed = left.length + right.length;
-    int spaces = width - totalUsed;
-    if (spaces < 1) spaces = 1;
-
-    return '$left${' ' * spaces}$right';
-  }
-
+  // Splits a long string into multiple lines based on maxWidth,
+  // respecting word boundaries and handling very long words.
   List<String> _splitText(String text, int maxWidth) {
     if (text.length <= maxWidth) return [text];
 
@@ -499,43 +496,44 @@ class ImprovedBluetoothPrintService extends GetxController {
     String currentLine = '';
 
     for (String word in words) {
-      if ((currentLine + ' ' + word).length <= maxWidth) {
+      // If adding the word (and a space) makes the current line too long
+      if ((currentLine + (currentLine.isEmpty ? '' : ' ') + word).length <= maxWidth) {
         currentLine += (currentLine.isEmpty ? '' : ' ') + word;
       } else {
+        // Add current line to list if not empty
         if (currentLine.isNotEmpty) {
           lines.add(currentLine);
-          currentLine = word;
+        }
+        // Handle word that is itself longer than maxWidth
+        if (word.length > maxWidth) {
+          int start = 0;
+          while (start < word.length) {
+            int end = (start + maxWidth) > word.length ? word.length : (start + maxWidth);
+            lines.add(word.substring(start, end));
+            start = end;
+          }
+          currentLine = ''; // Reset current line after breaking long word
         } else {
-          // Word is longer than line width, force break
-          lines.add(word.substring(0, maxWidth));
-          currentLine = word.substring(maxWidth);
+          currentLine = word; // Start new line with the current word
         }
       }
     }
-
+    // Add any remaining text
     if (currentLine.isNotEmpty) {
       lines.add(currentLine);
     }
-
     return lines;
   }
 
+  // Formats currency as "Rp" followed by amount with thousand separators, no decimals.
   String _formatCurrency(double amount) {
-    // Simplified formatting for thermal printer
-    String formatted = amount.toStringAsFixed(0);
-
-    // Add thousand separators
-    String result = '';
-    int count = 0;
-    for (int i = formatted.length - 1; i >= 0; i--) {
-      if (count > 0 && count % 3 == 0) {
-        result = '.' + result;
-      }
-      result = formatted[i] + result;
-      count++;
-    }
-
-    return 'Rp$result';
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID', // Indonesian locale for thousand separators
+      symbol: 'Rp',     // Currency symbol
+      decimalDigits: 0, // No decimal digits
+    );
+    // Remove the space that NumberFormat.currency might add after the symbol
+    return formatter.format(amount).replaceAll('Rp ', 'Rp');
   }
   // Notification helpers
   void _showSuccess(String message) {

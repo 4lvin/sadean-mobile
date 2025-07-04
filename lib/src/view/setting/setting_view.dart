@@ -201,9 +201,9 @@ class SettingView extends StatelessWidget {
               _buildMenuTile(
                 context,
                 Icons.cloud_upload_outlined,
-                "Upload Data",
-                "Upload data transaksi ke cloud",
-                    () => Get.snackbar('Info', 'Fitur ini akan segera hadir!'),
+                "Backup Data",
+                "Backup data ke cloud",
+                    () => controller.uploadDatabaseData(),
               ),
               _buildMenuTile(
                 context,

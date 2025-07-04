@@ -146,6 +146,61 @@ class ApiProvider extends GetxService {
     }
   }
 
+  Future<Map<String, dynamic>> uploadSqliteBackup(File backupFile) async {
+    try {
+      final token = await _storage.read(key: "access_token");
+      if (token == null || token.isEmpty) {
+        throw Exception('Token tidak tersedia. Tidak dapat mengunggah file.');
+      }
+
+      final uri = Uri.parse(ApiConstants.backupUpload);
+      final request = http.MultipartRequest('POST', uri);
+
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Attach the file to the request with the field name 'sql_file'
+      request.files.add(await http.MultipartFile.fromPath(
+        'sql_file', // This must match the field name expected by the backend
+        backupFile.path,
+        filename: backupFile.path.split('/').last, // Use the actual file name
+        // contentType: MediaType('application', 'x-sqlite3'), // Optional: specify MIME type
+      ));
+
+      print('Uploading SQLite backup file to: ${ApiConstants.backupUpload}');
+      print('File path: ${backupFile.path}');
+
+      final streamedResponse = await request.send().timeout(_timeoutDuration);
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('Upload Backup Response status: ${response.statusCode}');
+      print('Upload Backup Response body: ${response.body}');
+
+      return jsonDecode(_processResponse(response));
+    } on SocketException catch (e) {
+      print('SocketException (Upload SQLite Backup): $e');
+      throw Exception('No Internet connection');
+    } on TimeoutException catch (e) {
+      print('TimeoutException (Upload SQLite Backup): $e');
+      throw Exception('API not responded in time for backup upload');
+    } on FormatException catch (e) {
+      print('FormatException (Upload SQLite Backup): $e');
+      throw Exception('Invalid response format for backup upload');
+    } on BadRequestException catch (e) {
+      print('BadRequestException (Upload SQLite Backup): $e');
+      throw Exception(e.message);
+    } on UnAuthorizedException catch (e) {
+      print('UnAuthorizedException (Upload SQLite Backup): $e');
+      throw Exception('Unauthorized access for backup upload');
+    } on FetchDataException catch (e) {
+      print('FetchDataException (Upload SQLite Backup): $e');
+      throw Exception(e.message);
+    } catch (e) {
+      print('Unexpected error in uploadSqliteBackup: $e');
+      throw Exception('Terjadi kesalahan tidak terduga saat mengunggah backup: ${e.toString()}');
+    }
+  }
+
+
   // Process HTTP response
   String _processResponse(http.Response response) {
     final String responseBody = utf8.decode(response.bodyBytes);

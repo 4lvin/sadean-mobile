@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -6,6 +7,8 @@ import 'package:sadean/src/routers/constant.dart';
 
 import '../models/transaction_model.dart';
 import '../models/user_model.dart';
+import '../service/api_service.dart';
+import '../service/database_helper.dart';
 import 'improve_print_controller.dart';
 
 class SettingsController extends GetxController {
@@ -19,7 +22,8 @@ class SettingsController extends GetxController {
   static const _storage = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
-
+  final ApiProvider _apiProvider = Get.put(ApiProvider()); // Get ApiProvider instance
+  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
   // Settings
   var isDarkMode = false.obs;
   var isNotificationEnabled = true.obs;
@@ -500,6 +504,82 @@ class SettingsController extends GetxController {
 
   void contactUs() {
     Get.toNamed(contactRoute);
+  }
+
+  // Updated method for uploading database data as a .db file
+  Future<void> uploadDatabaseData() async {
+    isLoading.value = true;
+    try {
+      Get.snackbar(
+        "Info",
+        "Mempersiapkan file database untuk diunggah...",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.blue.shade100,
+        colorText: Colors.blue.shade800,
+        showProgressIndicator: true,
+      );
+
+      // Get the path to the SQLite database file
+      final dbPath = await _dbHelper.getDatabasePath();
+      final dbFile = File(dbPath);
+
+      if (!await dbFile.exists()) {
+        Get.snackbar(
+          "Peringatan",
+          "File database tidak ditemukan.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.orange.shade100,
+          colorText: Colors.orange.shade800,
+        );
+        return;
+      }
+
+      Get.snackbar(
+        "Info",
+        "Mengunggah file database ke server...",
+        snackPosition: SnackPosition.BOTTOM,
+        duration: const Duration(seconds: 10),
+        backgroundColor: Colors.blue.shade100,
+        colorText: Colors.blue.shade800,
+        showProgressIndicator: true,
+      );
+
+      // Call the API method to upload the SQLite .db file
+      final response = await _apiProvider.uploadSqliteBackup(dbFile);
+
+      if (response['status'] == true || response['success'] == true) {
+        Get.snackbar(
+          "Berhasil",
+          response['message'] ?? "File backup database berhasil diunggah!",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade800,
+        );
+      } else {
+        Get.snackbar(
+          "Gagal Unggah",
+          response['message'] ?? "Terjadi kesalahan saat mengunggah file backup.",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.red.shade100,
+          colorText: Colors.red.shade800,
+        );
+      }
+    } catch (e) {
+      print('Error uploading database file: $e');
+      Get.snackbar(
+        "Error",
+        "Gagal mengunggah file database: ${e.toString()}",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+    } finally {
+      isLoading.value = false;
+      if (Get.isSnackbarOpen) {
+        Get.back(); // Dismiss progress indicator snackbar
+      }
+    }
   }
 
   void logout() {
