@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sadean/src/config/assets.dart';
 import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/routers/constant.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../controllers/login_controller.dart';
 
@@ -151,15 +152,15 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                                 SizedBox(width: 12),
                                 Text(
-                                  "LOGIN...",
+                                  "MASUK...",
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ],
                             )
                                 : const Text(
-                              "LOGIN",
+                              "MASUK",
                               style: TextStyle(
-                                color: primaryColor,
+                                color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -167,29 +168,29 @@ class _LoginViewState extends State<LoginView> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
-                      // Divider
-                      const Row(
-                        children: [
-                          Expanded(child: Divider()),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Text("Or login with"),
-                          ),
-                          Expanded(child: Divider()),
-                        ],
-                      ),
+                      // const SizedBox(height: 20),
+                      // // Divider
+                      // const Row(
+                      //   children: [
+                      //     Expanded(child: Divider()),
+                      //     Padding(
+                      //       padding: EdgeInsets.symmetric(horizontal: 8.0),
+                      //       child: Text("Or login with"),
+                      //     ),
+                      //     Expanded(child: Divider()),
+                      //   ],
+                      // ),
                       const SizedBox(height: 24),
                       // Sign up section
                       Center(
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("Don't have account? "),
+                            const Text("Tidak punya akun? "),
                             GestureDetector(
                               onTap: controller.navigateToSignUp,
                               child: const Text(
-                                "Sign Up",
+                                "Daftar",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF00796B),
@@ -230,38 +231,22 @@ class _LoginViewState extends State<LoginView> {
           // Logo
           Positioned(
             top: size.height * 0.08,
-            right: 24,
-            child: SizedBox(
-              height: 100,
-              width: 100,
-              child: Image.asset(
-                logoSamping, // Tambahkan gambar sesuai keinginan
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.image_not_supported,
-                    size: 50,
-                    color: Colors.white,
-                  );
-                },
-              ),
+            right: 14,
+            child: Image.asset(
+              // height: 200,
+              width: MediaQuery.sizeOf(context).width * 0.5,
+              logoSamping, // Tambahkan gambar sesuai keinginan
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.image_not_supported,
+                  size: 50,
+                  color: Colors.white,
+                );
+              },
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSocialButton(String assetPath) {
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: Colors.grey.shade100,
-      child: Image.asset(
-        assetPath,
-        height: 24,
-        errorBuilder: (context, error, stackTrace) {
-          return const Icon(Icons.image_not_supported);
-        },
       ),
     );
   }

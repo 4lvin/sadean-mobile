@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:bluetooth_print_plus/bluetooth_print_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -133,7 +134,7 @@ class SettingsController extends GetxController {
 
       if (printerName != null && printerAddress != null) {
         // Scan to find the saved printer
-        await printService.startScan(timeout: Duration(seconds: 5));
+        await printService.startScan();
 
         // Wait for scan results
         await Future.delayed(Duration(seconds: 5));
@@ -293,19 +294,8 @@ class SettingsController extends GetxController {
     }
   }
 
-  Future<bool> connectPrinter() async {
-    if (printService.selectedDevice.value == null) {
-      Get.snackbar(
-        "Error",
-        "Pilih printer terlebih dahulu",
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return false;
-    }
-
-    return await printService.connect();
+  void selectAndConnectPrinter(BluetoothDevice device) {
+    printService.connect(device);
   }
 
   Future<void> disconnectPrinter() async {
@@ -506,79 +496,133 @@ class SettingsController extends GetxController {
     Get.toNamed(contactRoute);
   }
 
+  Future<void> importDatabaseFromApi() async {
+    // Tampilkan dialog konfirmasi
+    Get.dialog(
+      AlertDialog(
+        title: Text("Konfirmasi Impor Data"),
+        content: Text(
+          "Tindakan ini akan mengganti seluruh data lokal dengan data dari server. Pastikan Anda sudah melakukan backup jika diperlukan.\n\nApakah Anda yakin ingin melanjutkan?",
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Batal")),
+          ElevatedButton(
+            onPressed: () {
+              Get.back(); // Tutup dialog konfirmasi
+              _executeImport(); // Jalankan proses impor
+            },
+            child: Text("Impor Sekarang"),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeImport() async {
+    isLoading.value = true;
+    try {
+      Get.snackbar(
+        "Mengunduh",
+        "Sedang mengunduh data dari server...",
+        snackPosition: SnackPosition.BOTTOM,
+        showProgressIndicator: true,
+        isDismissible: false,
+      );
+
+      // 1. Unduh file backup
+      final backupFile = await _apiProvider.downloadSqliteBackup();
+
+      // Tutup koneksi database yang ada sebelum mengganti file
+      await _dbHelper.close();
+
+      // 2. Dapatkan path database lokal
+      final localDbPath = await _dbHelper.getDatabasePath();
+      final localDbFile = File(localDbPath);
+
+      // 3. Ganti file database lokal dengan file backup
+      await backupFile.copy(localDbPath);
+
+      if (Get.isSnackbarOpen) Get.back(); // Tutup snackbar unduh
+
+      Get.snackbar(
+        "Berhasil",
+        "Data berhasil diimpor! Aplikasi akan dimulai ulang untuk menerapkan perubahan.",
+        snackPosition: SnackPosition.TOP,
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade800,
+        duration: Duration(seconds: 5),
+      );
+
+      // Tunda sebentar lalu restart aplikasi
+      await Future.delayed(Duration(seconds: 3));
+      Get.offAllNamed(rootRoute); // Restart aplikasi dari splash screen
+
+    } catch (e) {
+      if (Get.isSnackbarOpen) Get.back(); // Tutup snackbar unduh jika gagal
+      _showImportError(e.toString());
+    } finally {
+      isLoading.value = false;
+      // Re-initialize database connection after operation
+      await _dbHelper.database;
+    }
+  }
+
+  void _showImportError(String message) {
+    Get.snackbar(
+      "Impor Gagal",
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.red.shade100,
+      colorText: Colors.red.shade800,
+    );
+  }
+
   // Updated method for uploading database data as a .db file
   Future<void> uploadDatabaseData() async {
     isLoading.value = true;
     try {
       Get.snackbar(
-        "Info",
-        "Mempersiapkan file database untuk diunggah...",
+        "Mengunggah",
+        "Mempersiapkan dan mengunggah backup...",
         snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
-        backgroundColor: Colors.blue.shade100,
-        colorText: Colors.blue.shade800,
         showProgressIndicator: true,
+        isDismissible: false,
       );
 
-      // Get the path to the SQLite database file
       final dbPath = await _dbHelper.getDatabasePath();
       final dbFile = File(dbPath);
 
       if (!await dbFile.exists()) {
-        Get.snackbar(
-          "Peringatan",
-          "File database tidak ditemukan.",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.orange.shade100,
-          colorText: Colors.orange.shade800,
-        );
-        return;
+        throw Exception("File database lokal tidak ditemukan.");
       }
 
-      Get.snackbar(
-        "Info",
-        "Mengunggah file database ke server...",
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 10),
-        backgroundColor: Colors.blue.shade100,
-        colorText: Colors.blue.shade800,
-        showProgressIndicator: true,
-      );
-
-      // Call the API method to upload the SQLite .db file
       final response = await _apiProvider.uploadSqliteBackup(dbFile);
+
+      if (Get.isSnackbarOpen) Get.back(); // Tutup snackbar
 
       if (response['status'] == true || response['success'] == true) {
         Get.snackbar(
           "Berhasil",
-          response['message'] ?? "File backup database berhasil diunggah!",
+          response['message'] ?? "File backup berhasil diunggah!",
           snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.green.shade100,
           colorText: Colors.green.shade800,
         );
       } else {
-        Get.snackbar(
-          "Gagal Unggah",
-          response['message'] ?? "Terjadi kesalahan saat mengunggah file backup.",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.red.shade100,
-          colorText: Colors.red.shade800,
-        );
+        throw Exception(response['message'] ?? "Terjadi kesalahan saat mengunggah.");
       }
     } catch (e) {
-      print('Error uploading database file: $e');
+      if (Get.isSnackbarOpen) Get.back(); // Tutup snackbar jika gagal
       Get.snackbar(
-        "Error",
-        "Gagal mengunggah file database: ${e.toString()}",
+        "Unggah Gagal",
+        e.toString(),
         snackPosition: SnackPosition.TOP,
         backgroundColor: Colors.red.shade100,
         colorText: Colors.red.shade800,
       );
     } finally {
       isLoading.value = false;
-      if (Get.isSnackbarOpen) {
-        Get.back(); // Dismiss progress indicator snackbar
-      }
     }
   }
 

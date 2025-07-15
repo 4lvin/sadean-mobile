@@ -1,3 +1,4 @@
+import 'package:bluetooth_print_plus/bluetooth_print_plus.dart' hide Alignment;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/config/theme.dart';
@@ -94,23 +95,23 @@ class SettingView extends StatelessWidget {
         children: [
           _buildMenuSection(context, "Pengaturan Printer", [
             _buildPrinterStatusCard(context),
-            _buildMenuTile(
-              context,
-              Icons.bluetooth_searching,
-              "Scan Printer",
-              "Cari printer Bluetooth tersedia",
-              () => controller.scanPrinters(),
-              trailing: Obx(
-                () =>
-                    controller.printService.isScanning.value
-                        ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                        : Icon(Icons.search, color: Colors.blue),
-              ),
-            ),
+            // _buildMenuTile(
+            //   context,
+            //   Icons.bluetooth_searching,
+            //   "Scan Printer",
+            //   "Cari printer Bluetooth tersedia",
+            //   () => controller.scanPrinters(),
+            //   trailing: Obx(
+            //     () =>
+            //         controller.printService.isScanning.value
+            //             ? SizedBox(
+            //               width: 20,
+            //               height: 20,
+            //               child: CircularProgressIndicator(strokeWidth: 2),
+            //             )
+            //             : Icon(Icons.search, color: Colors.blue),
+            //   ),
+            // ),
             _buildMenuTile(
               context,
               Icons.print,
@@ -133,10 +134,10 @@ class SettingView extends StatelessWidget {
                       controller.printService.isConnected.value
                           ? "Putuskan koneksi printer"
                           : "Hubungkan ke printer",
-                      () =>
-                          controller.printService.isConnected.value
-                              ? controller.disconnectPrinter()
-                              : controller.connectPrinter(),
+                      () => null,
+                          // controller.printService.isConnected.value
+                          //     ? controller.disconnectPrinter()
+                          //     : controller.connectPrinter(),
                       trailing: Obx(
                         () =>
                             controller.printService.isConnecting.value
@@ -181,6 +182,19 @@ class SettingView extends StatelessWidget {
                                   ),
                         ),
                       ),
+                    Obx(() {
+                      if(controller.printService.selectedDevice.value != null) {
+                        return _buildMenuTile(
+                            context,
+                            Icons.link_off,
+                            "Lupakan Printer",
+                            "Hapus printer yang tersimpan",
+                                () => controller.printService.forgetPrinter(),
+                            iconColor: Colors.red
+                        );
+                      }
+                      return SizedBox.shrink();
+                    }),
                   ],
                 );
               }
@@ -209,8 +223,8 @@ class SettingView extends StatelessWidget {
                 context,
                 Icons.cloud_download_outlined,
                 "Import Data",
-                "Import data transaksi dari file",
-                    () => Get.snackbar('Info', 'Fitur ini akan segera hadir!'),
+                "Ambil data dari server & ganti data lokal",
+                    () => controller.importDatabaseFromApi(), // <-- Panggil metode baru di sini
               ),
             ],
           ),
@@ -274,7 +288,7 @@ class SettingView extends StatelessWidget {
             if (controller.printService.selectedDevice.value != null &&
                 !controller.printService.isConnected.value) {
               // If printer is selected but not connected, try to connect
-              controller.connectPrinter();
+              // controller.connectPrinter();
             } else if (controller.printService.selectedDevice.value == null) {
               // If no printer selected, show selection dialog
               _showPrinterDialog(context);
@@ -657,4 +671,99 @@ class SettingView extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildPrinterStatusTile() {
+    return Obx(() {
+      final service = controller.printService;
+      IconData icon;
+      String title;
+      String subtitle;
+      Color color;
+
+      if (service.isConnecting.value) {
+        icon = Icons.bluetooth_searching;
+        title = "Menyambungkan...";
+        subtitle = service.selectedDevice.value?.name ?? "Mencari...";
+        color = Colors.orange;
+      } else if (service.isConnected.value) {
+        icon = Icons.bluetooth_connected;
+        title = "Terhubung";
+        subtitle = service.selectedDevice.value?.name ?? "Printer";
+        color = Colors.green;
+      } else if (service.selectedDevice.value != null) {
+        icon = Icons.bluetooth_disabled;
+        title = "Tersimpan, Tidak Terhubung";
+        subtitle = service.selectedDevice.value?.name ?? "Printer";
+        color = Colors.grey;
+      } else {
+        icon = Icons.phonelink_erase;
+        title = "Tidak Ada Printer";
+        subtitle = "Pilih printer untuk memulai";
+        color = Colors.red;
+      }
+
+      return ListTile(
+        leading: Icon(icon, color: color, size: 32),
+        title: Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)),
+        subtitle: Text(subtitle),
+        trailing: service.isConnected.value
+            ? OutlinedButton(onPressed: () => service.disconnect(), child: Text("Putus"))
+            : service.selectedDevice.value != null
+            ? ElevatedButton(onPressed: () => service.connect(service.selectedDevice.value!), child: Text("Sambung"))
+            : null,
+      );
+    });
+  }
+
+  void _showPrinterSelectionDialog(BuildContext context) {
+    controller.printService.startScan(); // Mulai scan saat dialog dibuka
+    Get.dialog(
+      AlertDialog(
+        title: Text("Pilih Printer"),
+        content: Obx(() {
+          if (controller.printService.isScanning.value) {
+            return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [CircularProgressIndicator(), SizedBox(height: 16), Text("Mencari...")]);
+          }
+          if (controller.printService.devices.isEmpty) {
+            return Text("Tidak ada perangkat ditemukan.");
+          }
+          return Container(
+            width: double.maxFinite,
+            height: 300,
+            child: ListView.builder(
+              itemCount: controller.printService.devices.length,
+              itemBuilder: (context, index) {
+                BluetoothDevice device = controller.printService.devices[index];
+                return ListTile(
+                  title: Text(device.name ?? "Unknown Device"),
+                  subtitle: Text(device.address ?? ""),
+                  onTap: () {
+                    // Langsung sambungkan saat dipilih
+                    controller.printService.connect(device);
+                    Get.back();
+                  },
+                );
+              },
+            ),
+          );
+        }),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: Text("Tutup")),
+          TextButton(onPressed: () => controller.printService.startScan(), child: Text("Scan Ulang")),
+        ],
+      ),
+    );
+  }
+
+  // Widget _buildMenuTile(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap, {Color? iconColor}) {
+  //   return ListTile(
+  //     leading: Icon(icon, color: iconColor ?? Theme.of(context).colorScheme.primary),
+  //     title: Text(title),
+  //     subtitle: Text(subtitle),
+  //     trailing: Icon(Icons.chevron_right),
+  //     onTap: onTap,
+  //   );
+  // }
 }

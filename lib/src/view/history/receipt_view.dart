@@ -14,6 +14,7 @@ import '../../config/theme.dart';
 import '../../controllers/improve_print_controller.dart';
 import '../../controllers/setting_controller.dart';
 import '../../models/transaction_model.dart';
+import '../setting/setting_view.dart';
 
 class ReceiptView extends StatelessWidget {
   final Transaction transaction;
@@ -76,23 +77,24 @@ class ReceiptView extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Receipt Card
-                  Container(
+                  RepaintBoundary(
                     key: _receiptKey,
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 400),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.3),
-                          spreadRadius: 2,
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
+
+                    child: Container(
+                      width: double.infinity,
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 2,
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -268,59 +270,62 @@ class ReceiptView extends StatelessWidget {
   }
 
   Widget _buildPrinterStatusBar() {
-    return Obx(() => Container(
-      color: primaryColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: _getPrinterStatusBackgroundColor(),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _getPrinterStatusBorderColor()),
-            ),
+    return Obx(() {
+      final service = printService;
+      bool isConnected = service.isConnected.value;
+      bool isConnecting = service.isConnecting.value;
+      bool hasDevice = service.selectedDevice.value != null;
+      String text;
+      Color bgColor;
+      IconData icon;
+
+      if (isConnecting) {
+        text = "Menyambungkan...";
+        bgColor = Colors.orange.shade700;
+        icon = Icons.bluetooth_searching;
+      } else if (isConnected) {
+        text = "Terhubung: ${service.selectedDevice.value?.name ?? ''}";
+        bgColor = Colors.green.shade700;
+        icon = Icons.bluetooth_connected;
+      } else if (hasDevice) {
+        text = "Ketuk untuk menyambungkan ke ${service.selectedDevice.value?.name ?? ''}";
+        bgColor = Colors.grey.shade700;
+        icon = Icons.bluetooth_disabled;
+      } else {
+        text = "Ketuk untuk memilih printer";
+        bgColor = Colors.red.shade700;
+        icon = Icons.phonelink_erase;
+      }
+
+      return Material(
+        color: bgColor,
+        child: InkWell(
+          onTap: () {
+            if (isConnecting) return;
+            if (hasDevice && !isConnected) {
+              service.connect(service.selectedDevice.value!);
+            } else {
+              // Arahkan ke halaman pengaturan jika tidak ada printer
+              Get.to(() => SettingView());
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (printService.isConnecting.value)
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-                    ),
-                  )
+                if (isConnecting)
+                  SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                 else
-                  Icon(
-                    _getPrinterStatusIcon(),
-                    size: 16,
-                    color: _getPrinterStatusIconColor(),
-                  ),
-                const SizedBox(width: 6),
-                InkWell(
-                  onTap: () => _showPrinterQuickAction(Get.context!),
-                  child: Text(
-                    _getPrinterStatusText(),
-                    style: TextStyle(
-                      color: _getPrinterStatusTextColor(),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                  Icon(icon, color: Colors.white, size: 18),
+                SizedBox(width: 12),
+                Text(text, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
-          const Spacer(),
-          Text(
-            'Status Printer',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
-          ),
-        ],
-      ),
-    ));
+        ),
+      );
+    });
   }
 
   Widget _buildBottomActionButtons() {
@@ -485,7 +490,7 @@ class ReceiptView extends StatelessWidget {
           ElevatedButton(
             onPressed: () async {
               Get.back();
-              await printService.connect();
+              // await printService.connect();
             },
             child: const Text('Hubungkan'),
           ),
@@ -678,7 +683,7 @@ class ReceiptView extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Get.back();
-                        printService.connect();
+                        // printService.connect();
                       },
                       icon: Icon(Icons.bluetooth_connected),
                       label: Text('Hubungkan Ulang'),
@@ -956,54 +961,39 @@ class ReceiptView extends StatelessWidget {
   }
 
 // Share as image method
-  void _shareAsImage() async {
-    Get.back(); // Close bottom sheet
-
-    // Show loading
+  Future<void> _shareAsImage() async {
     Get.dialog(
-      AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            const Text('Membuat gambar struk...'),
-          ],
-        ),
-      ),
+      const Center(child: CircularProgressIndicator()),
       barrierDismissible: false,
     );
 
     try {
-      // Capture widget as image
+      await Future.delayed(const Duration(milliseconds: 50));
       final boundary = _receiptKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      if (boundary == null) throw Exception('Gagal menemukan widget struk.');
 
-      if (boundary == null) {
-        Get.back(); // Close loading
-        _showError('Gagal mengambil gambar struk');
-        return;
-      }
-
-      // Convert to image
-      final image = await boundary.toImage(pixelRatio: 3.0);
+      final image = await boundary.toImage(pixelRatio: 2.0);
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final pngBytes = byteData!.buffer.asUint8List();
+      final pngBytes = byteData?.buffer.asUint8List();
 
-      // Save to temporary file
+      if (pngBytes == null) throw Exception('Gagal membuat data gambar.');
+
       final tempDir = await getTemporaryDirectory();
       final file = await File('${tempDir.path}/struk_${transaction.id}.png').create();
       await file.writeAsBytes(pngBytes);
 
-      Get.back(); // Close loading
+      if (Get.isDialogOpen ?? false) Get.back();
 
-      // Show share options for image
-      _showImageShareOptions(file.path);
-
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Struk Transaksi - ${setController.storeName.value}',
+      );
     } catch (e) {
-      Get.back(); // Close loading
-      _showError('Gagal membuat gambar: $e');
+      if (Get.isDialogOpen ?? false) Get.back();
+      Get.snackbar('Error', 'Gagal membagikan gambar: ${e.toString()}');
     }
   }
+
 
 // Show image share options
   void _showImageShareOptions(String imagePath) {

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/user_model.dart';
 import '../service/api_service.dart';
 import '../service/auth_service.dart';
@@ -215,16 +216,43 @@ class LoginController extends GetxController {
     );
   }
 
-  // Sign up navigation
-  void navigateToSignUp() {
-    // TODO: Implement sign up navigation
-    Get.snackbar(
-      'Info',
-      'Fitur pendaftaran akan segera tersedia',
-      backgroundColor: Colors.blue.shade100,
-      colorText: Colors.blue.shade800,
-      duration: const Duration(seconds: 2),
-      snackPosition: SnackPosition.TOP,
+  void navigateToSignUp() async {
+    const phoneNumber = '6285708607452'; // Nomor tanpa '+' atau '0' di depan
+    const message = 'Hai min, info lebih lanjut cara dapat akun dong.';
+    final encodedMessage = Uri.encodeComponent(message);
+
+    // URL universal untuk WhatsApp
+    final Uri whatsappUrl = Uri.parse('https://wa.me/$phoneNumber?text=$encodedMessage');
+
+    try {
+      // Coba luncurkan URL
+      if (await canLaunchUrl(whatsappUrl)) {
+        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+      } else {
+        // Jika gagal, tampilkan dialog yang lebih jelas
+        _showWhatsappErrorDialog();
+      }
+    } catch (e) {
+      _showWhatsappErrorDialog();
+    }
+  }
+
+  /// Dialog error yang lebih informatif
+  void _showWhatsappErrorDialog() {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Gagal Membuka WhatsApp'),
+        content: const Text(
+          'Aplikasi WhatsApp tidak ditemukan di perangkat Anda. '
+              'Pastikan WhatsApp sudah terpasang untuk melanjutkan pendaftaran.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: const Text('Mengerti'),
+          ),
+        ],
+      ),
     );
   }
 }

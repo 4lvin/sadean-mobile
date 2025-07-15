@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import 'api_constant.dart';
 import 'app_exception.dart';
@@ -200,6 +201,48 @@ class ApiProvider extends GetxService {
     }
   }
 
+  Future<File> downloadSqliteBackup() async {
+    try {
+      final token = await _storage.read(key: "access_token");
+      if (token == null || token.isEmpty) {
+        throw Exception('Token tidak tersedia. Tidak dapat mengunduh backup.');
+      }
+
+      final uri = Uri.parse(ApiConstants.backupDownload);
+      final headers = {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/vnd.sqlite3', // Minta tipe konten yang spesifik
+      };
+
+      print('Downloading SQLite backup from: ${ApiConstants.backupDownload}');
+
+      final response = await http.get(uri, headers: headers).timeout(_timeoutDuration);
+
+      if (response.statusCode == 200) {
+        // Simpan file yang diunduh ke direktori sementara
+        final tempDir = await getTemporaryDirectory();
+        final tempFile = File('${tempDir.path}/backup.db');
+        await tempFile.writeAsBytes(response.bodyBytes);
+        print('Backup downloaded to: ${tempFile.path}');
+        return tempFile;
+      } else {
+        // Coba decode pesan error dari server jika ada
+        try {
+          final errorResponse = jsonDecode(response.body);
+          throw Exception(errorResponse['message'] ?? 'Gagal mengunduh backup (Status: ${response.statusCode})');
+        } catch (_) {
+          throw Exception('Gagal mengunduh file backup (Status: ${response.statusCode})');
+        }
+      }
+    } on SocketException {
+      throw Exception('Tidak ada koneksi internet.');
+    } on TimeoutException {
+      throw Exception('Server tidak merespon saat mengunduh backup.');
+    } catch (e) {
+      print('Unexpected error in downloadSqliteBackup: $e');
+      rethrow; // Lempar kembali error untuk ditangani oleh controller
+    }
+  }
 
   // Process HTTP response
   String _processResponse(http.Response response) {
