@@ -572,7 +572,7 @@ class HistoryView extends StatelessWidget {
       return RefreshIndicator(
         onRefresh: () => controller.fetchTransactions(),
         child: ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 50 ),
           itemCount: controller.transactions.length,
           itemBuilder: (context, index) {
             final transaction = controller.transactions[index];

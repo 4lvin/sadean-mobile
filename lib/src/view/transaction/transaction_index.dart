@@ -32,25 +32,25 @@ class TransactionIndex extends StatelessWidget {
                 children: [
                   Image.asset(logoSamping, scale: 5),
                   const Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      color: primaryColor,
-                    ),
-                  ),
+                  // Container(
+                  //   decoration: BoxDecoration(
+                  //     color: Colors.white,
+                  //     borderRadius: BorderRadius.circular(12),
+                  //     boxShadow: [
+                  //       BoxShadow(
+                  //         color: Colors.grey.withOpacity(0.1),
+                  //         spreadRadius: 1,
+                  //         blurRadius: 3,
+                  //         offset: const Offset(0, 1),
+                  //       ),
+                  //     ],
+                  //   ),
+                  //   padding: const EdgeInsets.all(8),
+                  //   // child: Icon(
+                  //   //   Icons.notifications_none_rounded,
+                  //   //   color: primaryColor,
+                  //   // ),
+                  // ),
                 ],
               ),
             ),

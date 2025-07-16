@@ -4,6 +4,7 @@ import 'package:sadean/src/routers/constant.dart';
 import 'package:sadean/src/view/history/history_view.dart';
 import 'package:sadean/src/view/product/product_view.dart';
 import 'package:sadean/src/view/setting/setting_view.dart';
+import 'package:sadean/src/view/transaction/transaction_index.dart';
 
 import '../config/theme.dart';
 import 'dashboard/dashboard_view.dart';
@@ -14,6 +15,7 @@ class MainPage extends StatelessWidget {
   final pages = [
     DashboardView(),
     ProductsView(),
+    TransactionIndex(),
     HistoryView(),
     SettingView(),
   ];
@@ -34,7 +36,7 @@ class MainPage extends StatelessWidget {
           ),
         ),
         onPressed: () async {
-          Get.toNamed(transactionIndexRoute);
+          currentIndex.value = 2;
         },
         child: Container(
           margin: EdgeInsets.all(5),
@@ -50,7 +52,11 @@ class MainPage extends StatelessWidget {
       body: pages[currentIndex.value],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex.value,
-        onTap: (index) => currentIndex.value = index,
+        onTap: (index) {
+          // Abaikan tap pada item di tengah (index 2), karena itu untuk FAB
+          if (index == 2) return;
+          currentIndex.value = index;
+        },
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
@@ -60,6 +66,10 @@ class MainPage extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.inventory),
             label: 'Produk',
+          ),
+          BottomNavigationBarItem(
+            icon: SizedBox.shrink(),
+            label: '',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),

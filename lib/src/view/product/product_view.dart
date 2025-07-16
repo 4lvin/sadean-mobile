@@ -71,10 +71,10 @@ class ProductsView extends StatelessWidget {
                 ? GridView.builder(
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
+                crossAxisCount: 3,
                 childAspectRatio: 0.75,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                // crossAxisSpacing: 5,
+                mainAxisSpacing: 12,
               ),
               itemCount: controller.products.length,
               itemBuilder: (context, index) {
@@ -88,7 +88,7 @@ class ProductsView extends StatelessWidget {
               itemBuilder: (context, index) {
                 final product = controller.products[index];
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
+                  padding: const EdgeInsets.only(bottom: 8.0),
                   child: _buildProductCard(product, isGrid: false),
                 );
               },
@@ -135,21 +135,21 @@ class ProductsView extends StatelessWidget {
           children: [
             // Gambar atas
             Container(
-              height: 120,
+              height: 70,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(12)),
+                const BorderRadius.vertical(top: Radius.circular(8)),
               ),
               child: ClipRRect(
                 borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(12)),
+                const BorderRadius.vertical(top: Radius.circular(8)),
                 child: imageWidget,
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(8.0),
               child: _buildProductDetails(product),
             ),
           ],
@@ -161,8 +161,8 @@ class ProductsView extends StatelessWidget {
               borderRadius: const BorderRadius.horizontal(
                   left: Radius.circular(12)),
               child: Container(
-                width: 100,
-                height: 100,
+                width: 90,
+                height: 90,
                 color: Colors.grey[200],
                 child: imageWidget,
               ),
@@ -192,7 +192,7 @@ class ProductsView extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 4),
+        // const SizedBox(height: 4),
         Text(
           'Rp ${_formatPrice(product.sellingPrice)}',
           style: const TextStyle(
@@ -212,6 +212,8 @@ class ProductsView extends StatelessWidget {
                     ? Colors.red
                     : Colors.grey[600],
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             if (product.stock <= product.minStock)
               Container(

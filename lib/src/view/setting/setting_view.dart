@@ -53,15 +53,15 @@ class SettingView extends StatelessWidget {
         child: Column(
           children: [
             CircleAvatar(
-              radius: isTablet ? 50 : 40,
+              radius: isTablet ? 40 : 30,
               backgroundColor: Colors.white,
               child: Icon(
                 Icons.person,
-                size: isTablet ? 60 : 50,
+                size: isTablet ? 50 : 40,
                 color: Colors.blue,
               ),
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 12),
             Text(
               controller.userName.value,
               style: TextStyle(
@@ -70,7 +70,7 @@ class SettingView extends StatelessWidget {
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 8),
+
             Text(
               controller.userEmail.value,
               style: TextStyle(
@@ -251,6 +251,7 @@ class SettingView extends StatelessWidget {
               controller.contactUs,
             ),
           ]),
+          Center(child: Text('V.1.1.2',style: TextStyle(color: Colors.blueGrey),)),
           _buildMenuSection(context, "Akun", [
             _buildMenuTile(
               context,

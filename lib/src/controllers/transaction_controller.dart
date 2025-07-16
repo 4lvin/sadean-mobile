@@ -759,11 +759,18 @@ class TransactionController extends GetxController {
             onPressed: () {
               Get.back();
               Get.back();
+              Get.back();
+              Get.back();
+              Get.back();
             },
             child: const Text('Tutup'),
           ),
           ElevatedButton.icon(
             onPressed: () {
+              Get.back();
+              Get.back();
+              Get.back();
+              Get.back();
               Get.back();
               Get.to(() => ReceiptView(
                 transaction: transaction,

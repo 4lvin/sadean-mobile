@@ -200,6 +200,8 @@ class _LoginViewState extends State<LoginView> {
                           ],
                         ),
                       ),
+                      SizedBox(height: 100,),
+                      Center(child: Text('V.1.1.2',style: TextStyle(color: Colors.blueGrey),)),
                     ],
                   ),
                 ),
