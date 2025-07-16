@@ -227,6 +227,9 @@ class DashboardController extends GetxController {
         transactions = await _transactionService.getAllTransactions();
       }
 
+      // FILTER HANYA TRANSAKSI YANG SUDAH LUNAS
+      transactions = transactions.where((t) => t.paymentStatus == 'paid').toList();
+
       // Calculate transaction stats from filtered data
       transactionCount.value = transactions.length;
 

@@ -42,11 +42,11 @@ class HistoryView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Riwayat',style: TextStyle(color: Colors.white),),
+        title: const Text('Riwayat', style: TextStyle(color: Colors.white)),
         backgroundColor: primaryColor,
         actions: [
           IconButton(
-            icon: const Icon(Icons.filter_list,color: Colors.white,),
+            icon: const Icon(Icons.filter_list, color: Colors.white),
             onPressed: () => _showFilterOptions(),
           ),
           Obx(
@@ -60,7 +60,7 @@ class HistoryView extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                      : const Icon(Icons.refresh,color: Colors.white,),
+                      : const Icon(Icons.refresh, color: Colors.white),
               onPressed:
                   (selectedTabIndex.value == 0
                           ? controller.isLoading.value
@@ -118,7 +118,9 @@ class HistoryView extends StatelessWidget {
     // Calculate transaction profit
     double transactionProfit = 0.0;
     for (var transaction in controller.transactions) {
-      transactionProfit += transaction.profit;
+      if (transaction.paymentStatus == 'paid') {
+        transactionProfit += transaction.profit;
+      }
     }
     totalTransactionProfit.value = transactionProfit;
 
@@ -451,7 +453,7 @@ class HistoryView extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: 60,)
+          SizedBox(height: 60),
         ],
       ),
     );
@@ -468,14 +470,13 @@ class HistoryView extends StatelessWidget {
         Icon(icon, color: color, size: 20),
         const SizedBox(width: 8),
         Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
-   Text(
-            _formatCurrency(amount),
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: color,
-            ),
-
+        Text(
+          _formatCurrency(amount),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: color,
+          ),
         ),
       ],
     );
@@ -676,7 +677,6 @@ class HistoryView extends StatelessWidget {
           //     ],
           //   ),
           // ),
-
           const SizedBox(height: 16),
 
           // Filter tabs for income/expense
@@ -857,12 +857,18 @@ class HistoryView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
+                          color: transaction.paymentStatus == 'paid'
+                              ? Colors.green.shade100
+                              : Colors.orange.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          Icons.receipt,
-                          color: Colors.blue.shade700,
+                          transaction.paymentStatus == 'paid'
+                              ? Icons.check_circle
+                              : Icons.pending,
+                          color: transaction.paymentStatus == 'paid'
+                              ? Colors.green.shade700
+                              : Colors.orange.shade700,
                           size: 20,
                         ),
                       ),
@@ -878,10 +884,15 @@ class HistoryView extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Transaksi Penjualan',
+                            transaction.paymentStatus == 'paid'
+                                ? 'LUNAS'
+                                : 'BELUM LUNAS',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: transaction.paymentStatus == 'paid'
+                                  ? Colors.green[600]
+                                  : Colors.orange[600],
                               fontSize: 12,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
@@ -911,16 +922,17 @@ class HistoryView extends StatelessWidget {
                             ),
                             onTap: () => _showReceipt(transaction),
                           ),
-                          PopupMenuItem(
-                            child: const Row(
-                              children: [
-                                Icon(Icons.print, size: 20),
-                                SizedBox(width: 8),
-                                Text('Cetak'),
-                              ],
+                          if (transaction.paymentStatus == 'pending')
+                            PopupMenuItem(
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.payment, size: 20, color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text('Lunasi', style: TextStyle(color: Colors.green)),
+                                ],
+                              ),
+                              onTap: () => _showPaymentDialog(transaction),
                             ),
-                            onTap: () => _printTransaction(transaction),
-                          ),
                           PopupMenuItem(
                             child: const Row(
                               children: [
@@ -980,22 +992,32 @@ class HistoryView extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              // Row(
-              //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //   children: [
-              //     const Text(
-              //       'Laba',
-              //       style: TextStyle(fontWeight: FontWeight.w500),
-              //     ),
-              //     Text(
-              //       'Rp ${_formatPrice(transaction.profit)}',
-              //       style: TextStyle(
-              //         fontWeight: FontWeight.bold,
-              //         color: Colors.blue[700],
-              //       ),
-              //     ),
-              //   ],
-              // ),
+              if (transaction.paymentStatus == 'pending') ...[
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, size: 16, color: Colors.orange[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Sisa pembayaran: Rp ${_formatPrice(transaction.totalAmount - transaction.amountPaid)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1232,9 +1254,10 @@ class HistoryView extends StatelessWidget {
           change: 'Rp ${transaction.changeAmount.toString()}',
           status: 'LUNAS',
           trxCode: 'TRX-${transaction.id}',
-          footerNote: setController.receiptFooterNote.value.isNotEmpty
-              ? setController.receiptFooterNote.value
-              : "",
+          footerNote:
+              setController.receiptFooterNote.value.isNotEmpty
+                  ? setController.receiptFooterNote.value
+                  : "",
         );
       } catch (e) {
         Get.snackbar('Error', e.toString());
@@ -1311,5 +1334,104 @@ class HistoryView extends StatelessWidget {
         'phoneNumber': '08573671088',
       },
     );
+  }
+
+  void _showPaymentDialog(Transaction transaction) {
+    final remainingAmount = transaction.totalAmount - transaction.amountPaid;
+    final paymentController = TextEditingController(
+      text: remainingAmount.toString(),
+    );
+
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.payment, color: primaryColor),
+            const SizedBox(width: 12),
+            const Text('Lunasi Pembayaran'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('ID Transaksi: ${transaction.id}'),
+            const SizedBox(height: 8),
+            Text('Total: ${_formatCurrency(transaction.totalAmount)}'),
+            Text('Sudah Dibayar: ${_formatCurrency(transaction.amountPaid)}'),
+            Text(
+              'Sisa: ${_formatCurrency(remainingAmount)}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: paymentController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Jumlah Pembayaran',
+                border: OutlineInputBorder(),
+                prefixText: 'Rp ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              final paymentAmount =
+                  double.tryParse(paymentController.text) ?? 0;
+              if (paymentAmount <= 0) {
+                Get.snackbar('Error', 'Masukkan jumlah pembayaran yang valid');
+                return;
+              }
+
+              Get.back();
+              await _completePayment(transaction, paymentAmount);
+            },
+            child: const Text('Bayar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _completePayment(
+    Transaction transaction,
+    double additionalPayment,
+  ) async {
+    try {
+      final service = Get.find<TransactionService>();
+      final newTotalPaid = transaction.amountPaid + additionalPayment;
+      final newStatus =
+          newTotalPaid >= transaction.totalAmount ? 'paid' : 'pending';
+      final newChangeAmount =
+          newStatus == 'paid' ? newTotalPaid - transaction.totalAmount : 0.0;
+
+      await service.updateTransactionPayment(
+        transactionId: transaction.id,
+        paymentMethod: transaction.paymentMethod,
+        amountPaid: newTotalPaid,
+        changeAmount: newChangeAmount,
+        paymentStatus: newStatus,
+      );
+
+      await controller.fetchTransactions();
+
+      Get.snackbar(
+        'Berhasil',
+        newStatus == 'paid'
+            ? 'Pembayaran berhasil dilunasi'
+            : 'Pembayaran berhasil diperbarui',
+        backgroundColor: Colors.green.shade100,
+        colorText: Colors.green.shade800,
+      );
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal memperbarui pembayaran: $e');
+    }
   }
 }

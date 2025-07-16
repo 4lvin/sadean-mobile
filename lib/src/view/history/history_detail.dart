@@ -428,6 +428,36 @@ class TransactionDetailView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Obx(() {
+                final isPaid = controller.amountPaid.value >= controller.cartTotal.value;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isPaid ? Colors.green.shade100 : Colors.orange.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isPaid ? Icons.check_circle : Icons.pending,
+                        size: 16,
+                        color: isPaid ? Colors.green : Colors.orange,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        isPaid ? 'AKAN LUNAS' : 'BELUM LUNAS',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isPaid ? Colors.green : Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
+              const SizedBox(height: 16),
               // Total Summary
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

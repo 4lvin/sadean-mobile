@@ -338,7 +338,7 @@ class TransactionController extends GetxController {
   }
 
   bool get canProcessPayment {
-    return cartItems.isNotEmpty && amountPaid.value >= cartTotal.value;
+    return cartItems.isNotEmpty && amountPaid.value > 0;
   }
 
   // Transaction Adjustments Dialog
@@ -642,14 +642,24 @@ class TransactionController extends GetxController {
       return;
     }
 
-    if (!canProcessPayment) {
-      Get.snackbar('Error', 'Jumlah pembayaran tidak mencukupi');
+    // if (!canProcessPayment) {
+    //   Get.snackbar('Error', 'Jumlah pembayaran tidak mencukupi');
+    //   return;
+    // }
+    if (amountPaid.value <= 0) {
+      Get.snackbar('Error', 'Masukkan jumlah pembayaran');
       return;
     }
 
     try {
       isProcessingTransaction.value = true;
 
+      final paymentStatus = amountPaid.value >= cartTotal.value ? 'paid' : 'pending';
+
+      // Jika status pending, set changeAmount ke 0
+      final actualChangeAmount = paymentStatus == 'paid'
+          ? amountPaid.value - cartTotal.value
+          : 0.0;
       // Calculate final amounts for transaction
       final discountAmount = discountType.value == 'percentage'
           ? cartSubtotal.value * (discount.value / 100)
@@ -668,7 +678,8 @@ class TransactionController extends GetxController {
         serviceFee: serviceFee.value,
         paymentMethod: paymentMethod.value,
         amountPaid: amountPaid.value,
-        changeAmount: changeAmount.value,
+        changeAmount: actualChangeAmount,
+        paymentStatus: paymentStatus,
         customerName: customerName.value.isNotEmpty ? customerName.value : null,
         notes: transactionNotes.value.isNotEmpty ? transactionNotes.value : null,
       );
@@ -694,9 +705,19 @@ class TransactionController extends GetxController {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.green, size: 32),
+            Icon(
+              transaction.paymentStatus == 'paid'
+                  ? Icons.check_circle
+                  : Icons.pending,
+              color: transaction.paymentStatus == 'paid'
+                  ? Colors.green
+                  : Colors.orange,
+              size: 32,
+            ),
             const SizedBox(width: 12),
-            const Text('Transaksi Berhasil'),
+            Text(transaction.paymentStatus == 'paid'
+                ? 'Transaksi Berhasil'
+                : 'Transaksi Pending'),
           ],
         ),
         content: Column(
@@ -708,12 +729,27 @@ class TransactionController extends GetxController {
             Text('Total: Rp ${formatPrice(transaction.totalAmount)}'),
             const SizedBox(height: 8),
             Text('Dibayar: Rp ${formatPrice(transaction.amountPaid)}'),
-            if (transaction.changeAmount > 0) ...[
+            if (transaction.paymentStatus == 'pending') ...[
+              const SizedBox(height: 8),
+              Text(
+                'Sisa: Rp ${formatPrice(transaction.totalAmount - transaction.amountPaid)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
+              ),
+            ] else if (transaction.changeAmount > 0) ...[
               const SizedBox(height: 8),
               Text('Kembalian: Rp ${formatPrice(transaction.changeAmount)}'),
             ],
             const SizedBox(height: 8),
-            Text('Laba: Rp ${formatPrice(transaction.profit)}'),
+            Text('Status: ${transaction.paymentStatus == 'paid' ? 'LUNAS' : 'BELUM LUNAS'}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: transaction.paymentStatus == 'paid'
+                      ? Colors.green
+                      : Colors.orange,
+                )),
             const SizedBox(height: 8),
             Text('Metode: ${_getPaymentMethodDisplay(transaction.paymentMethod)}'),
           ],
@@ -722,14 +758,13 @@ class TransactionController extends GetxController {
           TextButton(
             onPressed: () {
               Get.back();
-              Get.back(); // Return to main screen
+              Get.back();
             },
             child: const Text('Tutup'),
           ),
           ElevatedButton.icon(
             onPressed: () {
               Get.back();
-              // Navigate to Receipt View with complete transaction data
               Get.to(() => ReceiptView(
                 transaction: transaction,
                 customerName: transaction.customerName ?? 'Pelanggan',
