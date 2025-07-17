@@ -126,6 +126,17 @@ class ReceiptView extends StatelessWidget {
                           _buildDividerLine(),
                           const SizedBox(height: 8),
 
+                          if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
+                            Text(
+                              'Pelanggan: ${transaction.customerName}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           // Transaction Date & Time
                           Text(
                             'Tanggal: ${_formatDateTime(transaction.date)}',
@@ -386,21 +397,6 @@ class ReceiptView extends StatelessWidget {
     );
   }
 
-  // Printer status helper methods using improved service
-  Color _getPrinterStatusBackgroundColor() {
-    if (printService.isConnecting.value) return Colors.orange.shade50;
-    if (printService.isConnected.value && printService.selectedDevice.value != null) return Colors.green.shade50;
-    if (printService.selectedDevice.value != null && !printService.isConnected.value) return Colors.red.shade50;
-    return Colors.grey.shade200;
-  }
-
-  Color _getPrinterStatusBorderColor() {
-    if (printService.isConnecting.value) return Colors.orange;
-    if (printService.isConnected.value && printService.selectedDevice.value != null) return Colors.green;
-    if (printService.selectedDevice.value != null && !printService.isConnected.value) return Colors.red;
-    return Colors.grey;
-  }
-
   IconData _getPrinterStatusIcon() {
     if (printService.isConnected.value && printService.selectedDevice.value != null) return Icons.bluetooth_connected;
     if (printService.selectedDevice.value != null && !printService.isConnected.value) return Icons.bluetooth_disabled;
@@ -420,13 +416,6 @@ class ReceiptView extends StatelessWidget {
     return 'Pilih Printer';
   }
 
-  Color _getPrinterStatusTextColor() {
-    if (printService.isConnecting.value) return Colors.orange.shade700;
-    if (printService.isConnected.value && printService.selectedDevice.value != null) return Colors.green.shade700;
-    if (printService.selectedDevice.value != null && !printService.isConnected.value) return Colors.red.shade700;
-    return Colors.grey.shade700;
-  }
-
   void _handlePrintAction() {
     if (printService.selectedDevice.value == null) {
       _showPrinterSelectionDialog();
@@ -434,16 +423,6 @@ class ReceiptView extends StatelessWidget {
       _showReconnectDialog();
     } else {
       _printTransaction();
-    }
-  }
-
-  void _showPrinterQuickAction(BuildContext context) {
-    if (printService.selectedDevice.value == null) {
-      _showPrinterSelectionDialog();
-    } else if (!printService.isConnected.value) {
-      _showReconnectDialog();
-    } else {
-      _showPrinterMenu(context);
     }
   }
 
@@ -499,73 +478,6 @@ class ReceiptView extends StatelessWidget {
     );
   }
 
-  void _showPrinterMenu(BuildContext context) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Menu Printer',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              leading: const Icon(Icons.print, color: Colors.blue),
-              title: const Text('Cetak Struk'),
-              subtitle: const Text('Cetak struk transaksi ini'),
-              onTap: () {
-                Get.back();
-                _printTransaction();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.print_outlined, color: Colors.green),
-              title: const Text('Test Print'),
-              subtitle: const Text('Cetak halaman percobaan'),
-              onTap: () {
-                Get.back();
-                printService.testPrint();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bluetooth_disabled, color: Colors.orange),
-              title: const Text('Putuskan Koneksi'),
-              subtitle: const Text('Putuskan koneksi printer'),
-              onTap: () {
-                Get.back();
-                printService.disconnect();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings, color: Colors.grey),
-              title: const Text('Pengaturan Printer'),
-              subtitle: const Text('Kelola pengaturan printer'),
-              onTap: () {
-                Get.back();
-                _showPrinterSettings(context);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // Updated print method using improved service
   void _printTransaction() async {
     try {
@@ -573,6 +485,7 @@ class ReceiptView extends StatelessWidget {
         storeName: setController.storeName.value,
         storeAddress: setController.storeAddress.value,
         storePhone: setController.storePhone.value,
+        customerName: transaction.customerName,
         items: transaction.items,
         subtotal: transaction.calculatedSubtotal,
         adminFee: transaction.serviceFee ?? 0.0,

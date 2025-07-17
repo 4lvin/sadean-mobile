@@ -135,6 +135,8 @@ class TransactionDetail extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           _buildInfoRow('ID Transaksi', transaction.id),
+                          if (transaction.customerName != null && transaction.customerName!.isNotEmpty)
+                            _buildInfoRow('Pelanggan', transaction.customerName!),
                           _buildInfoRow('Tanggal', _formatDate(transaction.date)),
                           _buildInfoRow('Total Item', '${transaction.items.length} item'),
                           const Divider(height: 20),

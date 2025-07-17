@@ -11,7 +11,10 @@ import '../models/transaction_model.dart';
 
 class ImprovedBluetoothPrintService extends GetxController {
   final EscCommand _esc = EscCommand();
-  final _storage = const FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
+  final _storage = const FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+  );
+
   // Observable variables
   var devices = <BluetoothDevice>[].obs;
   var selectedDevice = Rxn<BluetoothDevice>();
@@ -21,9 +24,12 @@ class ImprovedBluetoothPrintService extends GetxController {
   var isPrinting = false.obs;
 
   // Stream subscriptions
-  StreamSubscription? _scanSubscription, _stateSubscription, _connectSubscription;
+  StreamSubscription? _scanSubscription,
+      _stateSubscription,
+      _connectSubscription;
   static const _printerNameKey = 'last_printer_name';
   static const _printerAddressKey = 'last_printer_address';
+
   @override
   void onInit() {
     super.onInit();
@@ -68,18 +74,19 @@ class ImprovedBluetoothPrintService extends GetxController {
     });
   }
 
-
   /// Request necessary permissions
   Future<bool> requestPermissions() async {
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.bluetoothScan,
-      Permission.bluetoothConnect,
-      Permission.bluetoothAdvertise,
-      Permission.location,
-    ].request();
+    Map<Permission, PermissionStatus> statuses =
+        await [
+          Permission.bluetoothScan,
+          Permission.bluetoothConnect,
+          Permission.bluetoothAdvertise,
+          Permission.location,
+        ].request();
 
-    bool allGranted = statuses.values.every((status) =>
-    status == PermissionStatus.granted);
+    bool allGranted = statuses.values.every(
+      (status) => status == PermissionStatus.granted,
+    );
 
     if (!allGranted) {
       _showError('Izin Bluetooth diperlukan untuk menghubungkan printer');
@@ -140,7 +147,7 @@ class ImprovedBluetoothPrintService extends GetxController {
     final name = await _storage.read(key: _printerNameKey);
     final address = await _storage.read(key: _printerAddressKey);
     if (address != null && name != null) {
-      final savedDevice = BluetoothDevice(name,address);
+      final savedDevice = BluetoothDevice(name, address);
       connect(savedDevice);
     }
   }
@@ -153,7 +160,9 @@ class ImprovedBluetoothPrintService extends GetxController {
 
   /// Connect to selected device
   Future<void> connect(BluetoothDevice device) async {
-    if (isConnecting.value || (isConnected.value && selectedDevice.value?.address == device.address)) {
+    if (isConnecting.value ||
+        (isConnected.value &&
+            selectedDevice.value?.address == device.address)) {
       return;
     }
     try {
@@ -221,7 +230,6 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       _showSuccess('Test print berhasil!');
       return true;
-
     } catch (e) {
       print('Test print error: $e');
       _showError('Test print gagal: $e');
@@ -236,6 +244,7 @@ class ImprovedBluetoothPrintService extends GetxController {
     required String storeName,
     required String storeAddress,
     required String storePhone,
+    String? customerName,
     required List<TransactionItem> items,
     required double subtotal,
     required double adminFee,
@@ -279,19 +288,31 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       // --- INFO ---
       add([0x1B, 0x61, 0x00]); // Align Left
-      addLine(separator);
-      addLine(_leftRight('Tanggal', DateFormat('dd/MM/yy, HH:mm').format(dateTime), lineWidth));
+      if (customerName != null && customerName.isNotEmpty) {
+        addLine(_leftRight('Pelanggan:', customerName, lineWidth));
+        add([0x0A]);
+      }
+      addLine(
+        _leftRight(
+          'Tanggal',
+          DateFormat('dd/MM/yy, HH:mm').format(dateTime),
+          lineWidth,
+        ),
+      );
       addLine(_leftRight('No. Ref', transactionId, lineWidth));
       // addLine(separator);
       add([0x0A]);
 
-
       // --- ITEMS ---
       for (final item in items) {
         // Line 1: Nama Produk
-        _splitText(item.productName.toUpperCase(), lineWidth).forEach((line) => addLine(line));
+        _splitText(
+          item.productName.toUpperCase(),
+          lineWidth,
+        ).forEach((line) => addLine(line));
         // Line 2: Qty x Harga & Total
-        final qtyPrice = '${item.quantity} x ${_formatCurrency(item.unitPrice)}';
+        final qtyPrice =
+            '${item.quantity} x ${_formatCurrency(item.unitPrice)}';
         final totalItem = _formatCurrency(item.quantity * item.unitPrice);
         addLine(_leftRight(qtyPrice, totalItem, lineWidth));
       }
@@ -299,7 +320,8 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       // --- TOTALS ---
       addLine(_leftRight('Subtotal', _formatCurrency(subtotal), lineWidth));
-      if (adminFee > 0) addLine(_leftRight('Admin', _formatCurrency(adminFee), lineWidth));
+      if (adminFee > 0)
+        addLine(_leftRight('Admin', _formatCurrency(adminFee), lineWidth));
 
       add([0x1B, 0x21, 0x00]); // Font: Double Height, Bold
       addLine(_leftRight('TOTAL', _formatCurrency(total), lineWidth));
@@ -307,7 +329,13 @@ class ImprovedBluetoothPrintService extends GetxController {
       addLine(separator);
 
       // --- PAYMENT ---
-      addLine(_leftRight('Bayar (${paymentMethod.toUpperCase()})', _formatCurrency(payment), lineWidth));
+      addLine(
+        _leftRight(
+          'Bayar (${paymentMethod.toUpperCase()})',
+          _formatCurrency(payment),
+          lineWidth,
+        ),
+      );
       addLine(_leftRight('Kembali', _formatCurrency(change), lineWidth));
       add([0x0A]);
 
@@ -317,8 +345,10 @@ class ImprovedBluetoothPrintService extends GetxController {
       addLine('=== LUNAS ===');
       add([0x1B, 0x21, 0x00]); // Font: Normal
       addLine(separator);
-      _splitText(footerNote ?? 'Terima Kasih Atas Kunjungan Anda', lineWidth)
-          .forEach((line) => addLine(line));
+      _splitText(
+        footerNote ?? 'Terima Kasih Atas Kunjungan Anda',
+        lineWidth,
+      ).forEach((line) => addLine(line));
 
       // Spacing at the end and cut paper
       add([0x0A, 0x0A, 0x0A, 0x0A]);
@@ -326,7 +356,6 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       await BluetoothPrintPlus.write(Uint8List.fromList(bytes));
       _showSuccess('Struk berhasil dicetak');
-
     } catch (e) {
       _showError('Gagal mencetak: ${e.toString()}');
     } finally {
@@ -370,6 +399,7 @@ class ImprovedBluetoothPrintService extends GetxController {
   String _formatCurrency(double amount) {
     return NumberFormat.decimalPattern('id_ID').format(amount);
   }
+
   // Notification helpers
   void _showSuccess(String message) {
     Get.snackbar(

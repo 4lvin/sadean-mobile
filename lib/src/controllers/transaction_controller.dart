@@ -703,6 +703,16 @@ class TransactionController extends GetxController {
           notes: 'Transaksi: ${transaction.id}',
         );
       }
+      if (selectedCustomer.value != null && paymentStatus == 'paid' && amountPaid.value > 0) {
+        // Add payment record for customer
+        await _customerService.addCustomerTransaction(
+          customerId: selectedCustomer.value!.id,
+          type: 'payment',
+          amount: amountPaid.value,
+          paymentMethod: paymentMethod.value,
+          notes: 'Pembayaran Transaksi: ${transaction.id}',
+        );
+      }
       // Clear cart after successful transaction
       totalAmount.clear();
       clearCart();

@@ -220,7 +220,7 @@ class CustomerView extends StatelessWidget {
                       // Payment Button (only if has balance)
                       if (customer.hasBalance)
                         IconButton(
-                          onPressed: () => controller.showPaymentForm(customer),
+                          onPressed: () => controller.showPaymentForm(customer,),
                           icon: Icon(Icons.payment, color: Colors.green.shade600),
                           iconSize: 20,
                           tooltip: 'Terima Pembayaran',

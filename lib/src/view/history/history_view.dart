@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/controllers/setting_controller.dart';
 import 'package:sadean/src/view/history/history_detail.dart';
+import '../../controllers/customer_controller.dart';
 import '../../controllers/history_controller.dart';
 import '../../controllers/income_expense_controller.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +16,7 @@ import '../transaction/transaction_detail.dart';
 
 class HistoryView extends StatelessWidget {
   final HistoryController controller = Get.find<HistoryController>();
+  final CustomerController customerController = Get.put(CustomerController());
   final IncomeExpenseController incomeExpenseController = Get.put(
     IncomeExpenseController(),
   );
@@ -951,6 +953,26 @@ class HistoryView extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
+                Row(
+                  children: [
+                    Icon(Icons.person, size: 16, color: Colors.blue[600]),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        transaction.customerName!,
+                        style: TextStyle(
+                          color: Colors.blue[700],
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(
                 _formatDate(transaction.date),
                 style: TextStyle(color: Colors.grey[600], fontSize: 12),
@@ -1419,7 +1441,27 @@ class HistoryView extends StatelessWidget {
         changeAmount: newChangeAmount,
         paymentStatus: newStatus,
       );
+      if (transaction.customerName != null && additionalPayment > 0) {
+        try {
+          // Find customer by name
+          await customerController.fetchCustomers();
+          final customer = customerController.customers.firstWhereOrNull(
+                (c) => c.name == transaction.customerName,
+          );
 
+          if (customer != null) {
+            // Add payment record to customer transactions
+            await customerController.addPayment(
+              customer.id,
+              amount: additionalPayment,
+              paymentMethod: transaction.paymentMethod,
+              notes: 'Pelunasan Transaksi: ${transaction.id}',
+            );
+          }
+        } catch (e) {
+          print('Error updating customer balance: $e');
+        }
+      }
       await controller.fetchTransactions();
 
       Get.snackbar(

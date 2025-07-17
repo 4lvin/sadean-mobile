@@ -320,7 +320,9 @@ class SettingsController extends GetxController {
     required String change,
     required String status,
     required String trxCode,
-    required String footerNote,
+    String? transactionCustomerName, // Add customer name for transaction
+    String? transactionNotes,
+    String? footerNote,
   }) async {
     try {
       // Parse amounts
@@ -337,6 +339,7 @@ class SettingsController extends GetxController {
         storeName: customerName,
         storeAddress: customerLocation,
         storePhone: customerPhone,
+        customerName: transactionCustomerName,
         items: items,
         subtotal: subtotalAmount,
         adminFee: adminFeeAmount,
