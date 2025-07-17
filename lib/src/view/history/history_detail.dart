@@ -1057,16 +1057,18 @@ class TransactionDetailView extends StatelessWidget {
         ),
         child: SafeArea(
           child: Obx(
-            () => ElevatedButton(
-              onPressed:
-                  controller.isProcessingTransaction.value
-                      ? null
-                      : controller.canProcessPayment
-                      ? () => controller.processTransaction()
-                      : null,
+                () => ElevatedButton(
+              onPressed: controller.isProcessingTransaction.value
+                  ? null
+                  : controller.canProcessPayment
+                  ? () => controller.processTransaction()
+                  : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    controller.canProcessPayment ? primaryColor : Colors.grey,
+                backgroundColor: controller.canProcessPayment
+                    ? (controller.amountPaid.value >= controller.cartTotal.value
+                    ? primaryColor
+                    : Colors.orange)
+                    : Colors.grey,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
@@ -1074,31 +1076,32 @@ class TransactionDetailView extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child:
-                  controller.isProcessingTransaction.value
-                      ? const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                          SizedBox(width: 12),
-                          Text('MEMPROSES...'),
-                        ],
-                      )
-                      : const Text(
-                        'BAYAR',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                      ),
+              child: controller.isProcessingTransaction.value
+                  ? const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text('MEMPROSES...'),
+                ],
+              )
+                  : Text(
+                controller.amountPaid.value >= controller.cartTotal.value
+                    ? 'BAYAR LUNAS'
+                    : 'BAYAR KURANG',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
         ),
@@ -1120,17 +1123,16 @@ class TransactionDetailView extends StatelessWidget {
         ),
         child: SafeArea(
           child: Obx(
-            () => ElevatedButton(
-              onPressed:
-                  controller.cartItems.isEmpty
-                      ? null
-                      : () {
-                        if (controller.selectedTabIndex.value < 2) {
-                          controller.setSelectedTab(
-                            controller.selectedTabIndex.value + 1,
-                          );
-                        }
-                      },
+                () => ElevatedButton(
+              onPressed: controller.cartItems.isEmpty
+                  ? null
+                  : () {
+                if (controller.selectedTabIndex.value < 2) {
+                  controller.setSelectedTab(
+                    controller.selectedTabIndex.value + 1,
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
