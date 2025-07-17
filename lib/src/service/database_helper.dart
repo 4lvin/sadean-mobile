@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 class DatabaseHelper {
   static const _databaseName = "sadean_pos.db";
-  static const _databaseVersion = 4; // Incremented for stock tracking support
+  static const _databaseVersion = 5; // Incremented for stock tracking support
 
   // Table names
   static const String tableCategories = 'categories';
@@ -13,6 +13,8 @@ class DatabaseHelper {
   static const String tableTransactions = 'transactions';
   static const String tableTransactionItems = 'transaction_items';
   static const String tableIncomeExpense = 'income_expense';
+  static const String tableCustomers = 'customers';
+  static const String tableCustomerTransactions = 'customer_transactions';
 
   // Singleton pattern
   DatabaseHelper._privateConstructor();
@@ -125,6 +127,41 @@ class DatabaseHelper {
       )
     ''');
 
+    // Customers table
+    await db.execute('''
+      CREATE TABLE $tableCustomers (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        phone_number TEXT,
+        email TEXT,
+        barcode TEXT,
+        address TEXT,
+        balance REAL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        UNIQUE(phone_number),
+        UNIQUE(email),
+        UNIQUE(barcode)
+      )
+    ''');
+
+    // Customer transactions table
+    await db.execute('''
+      CREATE TABLE $tableCustomerTransactions (
+        id TEXT PRIMARY KEY,
+        customer_id TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('invoice', 'payment')),
+        amount REAL NOT NULL,
+        payment_method TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'pending',
+        date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (customer_id) REFERENCES $tableCustomers (id) ON DELETE CASCADE
+      )
+    ''');
+
     // Create indexes for better performance
     await db.execute('CREATE INDEX idx_products_category_id ON $tableProducts (category_id)');
     await db.execute('CREATE INDEX idx_products_barcode ON $tableProducts (barcode)');
@@ -136,6 +173,16 @@ class DatabaseHelper {
     await db.execute('CREATE INDEX idx_transactions_date ON $tableTransactions (date)');
     await db.execute('CREATE INDEX idx_income_expense_type ON $tableIncomeExpense (type)');
     await db.execute('CREATE INDEX idx_income_expense_date ON $tableIncomeExpense (date)');
+
+    // await db.execute('CREATE INDEX idx_customers_name ON $tableCustomers (name)');
+    // await db.execute('CREATE INDEX idx_customers_phone ON $tableCustomers (phone_number)');
+    // await db.execute('CREATE INDEX idx_customers_email ON $tableCustomers (email)');
+    // await db.execute('CREATE INDEX idx_customers_barcode ON $tableCustomers (barcode)');
+    // await db.execute('CREATE INDEX idx_customers_balance ON $tableCustomers (balance)');
+    // await db.execute('CREATE INDEX idx_customer_transactions_customer_id ON $tableCustomerTransactions (customer_id)');
+    // await db.execute('CREATE INDEX idx_customer_transactions_type ON $tableCustomerTransactions (type)');
+    // await db.execute('CREATE INDEX idx_customer_transactions_date ON $tableCustomerTransactions (date)');
+
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -177,6 +224,52 @@ class DatabaseHelper {
 
       // Update existing products to have stock tracking enabled by default
       await db.execute('UPDATE $tableProducts SET is_stock_enabled = 1 WHERE is_stock_enabled IS NULL');
+    }
+
+    if (oldVersion < 5) {
+      // Add customer tables
+      await db.execute('''
+        CREATE TABLE $tableCustomers (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          phone_number TEXT,
+          email TEXT,
+          barcode TEXT,
+          address TEXT,
+          balance REAL DEFAULT 0,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          UNIQUE(phone_number),
+          UNIQUE(email),
+          UNIQUE(barcode)
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE $tableCustomerTransactions (
+          id TEXT PRIMARY KEY,
+          customer_id TEXT NOT NULL,
+          type TEXT NOT NULL CHECK (type IN ('invoice', 'payment')),
+          amount REAL NOT NULL,
+          payment_method TEXT,
+          notes TEXT,
+          status TEXT DEFAULT 'pending',
+          date TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (customer_id) REFERENCES $tableCustomers (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // Create indexes
+      await db.execute('CREATE INDEX idx_customers_name ON $tableCustomers (name)');
+      await db.execute('CREATE INDEX idx_customers_phone ON $tableCustomers (phone_number)');
+      await db.execute('CREATE INDEX idx_customers_email ON $tableCustomers (email)');
+      await db.execute('CREATE INDEX idx_customers_barcode ON $tableCustomers (barcode)');
+      await db.execute('CREATE INDEX idx_customers_balance ON $tableCustomers (balance)');
+      await db.execute('CREATE INDEX idx_customer_transactions_customer_id ON $tableCustomerTransactions (customer_id)');
+      await db.execute('CREATE INDEX idx_customer_transactions_type ON $tableCustomerTransactions (type)');
+      await db.execute('CREATE INDEX idx_customer_transactions_date ON $tableCustomerTransactions (date)');
     }
   }
 
@@ -294,6 +387,8 @@ class DatabaseHelper {
       await txn.delete(tableTransactionItems);
       await txn.delete(tableTransactions);
       await txn.delete(tableIncomeExpense);
+      await txn.delete(tableCustomerTransactions); // Add this
+      await txn.delete(tableCustomers);
       await txn.delete(tableProducts);
       await txn.delete(tableCategories);
     });

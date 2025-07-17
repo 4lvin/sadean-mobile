@@ -61,24 +61,23 @@ class TransactionDetailView extends StatelessWidget {
                 Container(
                   margin: const EdgeInsets.only(top: 16),
                   height: 50,
-                  child: Obx(() =>
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildTab('PRODUK', Icons.inventory_2_outlined, 0),
-                          _buildTab('RINCIAN', Icons.receipt_long, 1),
-                          _buildTab('PEMBAYARAN', Icons.payment, 2),
-                        ],
-                      )),
+                  child: Obx(
+                    () => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        _buildTab('PRODUK', Icons.inventory_2_outlined, 0),
+                        _buildTab('RINCIAN', Icons.receipt_long, 1),
+                        _buildTab('PEMBAYARAN', Icons.payment, 2),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
           // Content
-          Expanded(
-            child: Obx(() => _buildTabContent()),
-          ),
+          Expanded(child: Obx(() => _buildTabContent())),
         ],
       ),
       bottomNavigationBar: Obx(() => _buildBottomBar()),
@@ -87,8 +86,8 @@ class TransactionDetailView extends StatelessWidget {
 
   Widget _buildTab(String title, IconData icon, int index) {
     final isActive = controller.selectedTabIndex.value == index;
-    final backgroundColor = isActive ? Colors.white : Colors.white.withOpacity(
-        0.2);
+    final backgroundColor =
+        isActive ? Colors.white : Colors.white.withOpacity(0.2);
     final textColor = isActive ? primaryColor : Colors.white;
     final iconColor = isActive ? primaryColor : Colors.white;
 
@@ -155,8 +154,11 @@ class TransactionDetailView extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shopping_cart_outlined, size: 80,
-                    color: Colors.grey[400]),
+                Icon(
+                  Icons.shopping_cart_outlined,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Belum ada produk di keranjang',
@@ -405,7 +407,6 @@ class TransactionDetailView extends StatelessWidget {
     );
   }
 
-
   Widget _buildPaymentTab() {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -429,11 +430,16 @@ class TransactionDetailView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Obx(() {
-                final isPaid = controller.amountPaid.value >= controller.cartTotal.value;
+                final isPaid =
+                    controller.amountPaid.value >= controller.cartTotal.value;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: isPaid ? Colors.green.shade100 : Colors.orange.shade100,
+                    color:
+                        isPaid ? Colors.green.shade100 : Colors.orange.shade100,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -464,71 +470,64 @@ class TransactionDetailView extends StatelessWidget {
                 children: [
                   const Text(
                     'Total Akhir',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Obx(
+                    () => Text(
+                      'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
                     ),
                   ),
-                  Obx(() =>
-                      Text(
-                        'Rp ${controller.formatPrice(
-                            controller.cartTotal.value)}',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
-                        ),
-                      )),
                 ],
               ),
 
               const SizedBox(height: 8),
 
               // Payment Status
-              Obx(() =>
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Pembayaran'),
-                      Text(
-                        'Rp ${controller.formatPrice(
-                            controller.cartTotal.value)}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ],
-                  )),
+              Obx(
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Pembayaran'),
+                    Text(
+                      'Rp ${controller.formatPrice(controller.cartTotal.value)}',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              ),
 
               const SizedBox(height: 8),
 
               // Amount Paid
-              Obx(() =>
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Kembali'),
-                      Text(
-                        'Rp ${controller.formatPrice(
-                            controller.changeAmount.value)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+              Obx(
+                () => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Kembali'),
+                    Text(
+                      'Rp ${controller.formatPrice(controller.changeAmount.value)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
                       ),
-                    ],
-                  )),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
 
         const SizedBox(height: 24),
 
-        // Payment Method Selection
         const Text(
-          'Jenis Pembayaran',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          'Pelanggan',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
 
@@ -538,53 +537,120 @@ class TransactionDetailView extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: Obx(() =>
-              DropdownButtonFormField<String>(
-                value: controller.paymentMethod.value,
-                decoration: const InputDecoration(
-                  labelText: 'Pilih Metode Pembayaran',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+          child: Obx(
+            () => ListTile(
+              leading: Icon(
+                controller.selectedCustomer.value != null
+                    ? Icons.person
+                    : Icons.person_outline,
+                color:
+                    controller.selectedCustomer.value != null
+                        ? Colors.blue
+                        : Colors.grey,
+              ),
+              title: Text(
+                controller.selectedCustomer.value?.name ?? 'Pilih Pelanggan',
+                style: TextStyle(
+                  color:
+                      controller.selectedCustomer.value != null
+                          ? Colors.black
+                          : Colors.grey[600],
                 ),
-                items: const [
-                  DropdownMenuItem(
-                    value: 'cash',
-                    child: Row(
-                      children: [
-                        Icon(Icons.payments, color: Colors.green),
-                        SizedBox(width: 12),
-                        Text('Cash'),
-                      ],
-                    ),
+              ),
+              subtitle:
+                  controller.selectedCustomer.value != null
+                      ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (controller.selectedCustomer.value!.phoneNumber !=
+                              null)
+                            Text(
+                              controller.selectedCustomer.value!.phoneNumber!,
+                            ),
+                          Text(
+                            'Saldo: ${controller.formatPrice(controller.selectedCustomer.value!.balance)}',
+                            style: TextStyle(
+                              color:
+                                  controller.selectedCustomer.value!.hasBalance
+                                      ? Colors.red
+                                      : Colors.green,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      )
+                      : const Text('Transaksi tanpa pelanggan'),
+              trailing: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+              onTap: () {
+                controller.loadCustomers();
+                controller.showCustomerDialog();
+              },
+            ),
+          ),
+        ),
+        // Payment Method Selection
+        const Text(
+          'Jenis Pembayaran',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Obx(
+            () => DropdownButtonFormField<String>(
+              value: controller.paymentMethod.value,
+              decoration: const InputDecoration(
+                labelText: 'Pilih Metode Pembayaran',
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'cash',
+                  child: Row(
+                    children: [
+                      Icon(Icons.payments, color: Colors.green),
+                      SizedBox(width: 12),
+                      Text('Cash'),
+                    ],
                   ),
-                  DropdownMenuItem(
-                    value: 'qris',
-                    child: Row(
-                      children: [
-                        Icon(Icons.qr_code, color: Colors.blue),
-                        SizedBox(width: 12),
-                        Text('QRIS'),
-                      ],
-                    ),
+                ),
+                DropdownMenuItem(
+                  value: 'qris',
+                  child: Row(
+                    children: [
+                      Icon(Icons.qr_code, color: Colors.blue),
+                      SizedBox(width: 12),
+                      Text('QRIS'),
+                    ],
                   ),
-                  DropdownMenuItem(
-                    value: 'transfer',
-                    child: Row(
-                      children: [
-                        Icon(Icons.account_balance, color: Colors.purple),
-                        SizedBox(width: 12),
-                        Text('Transfer Bank'),
-                      ],
-                    ),
+                ),
+                DropdownMenuItem(
+                  value: 'transfer',
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_balance, color: Colors.purple),
+                      SizedBox(width: 12),
+                      Text('Transfer Bank'),
+                    ],
                   ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.setPaymentMethod(value);
-                  }
-                },
-              )),
+                ),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  controller.setPaymentMethod(value);
+                }
+              },
+            ),
+          ),
         ),
 
         const SizedBox(height: 24),
@@ -592,10 +658,7 @@ class TransactionDetailView extends StatelessWidget {
         // Payment Amount Input
         const Text(
           'Total Dibayar',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
 
@@ -611,7 +674,9 @@ class TransactionDetailView extends StatelessWidget {
               labelText: 'Masukkan nominal',
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -627,10 +692,7 @@ class TransactionDetailView extends StatelessWidget {
         // Quick Payment Buttons
         const Text(
           'Total Dibayar',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
 
@@ -657,35 +719,37 @@ class TransactionDetailView extends StatelessWidget {
 
         // Customer Information (Optional)
         const Text(
-          'Informasi Pelanggan (Opsional)',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          'Informasi Tambahan',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
 
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: TextField(
-            decoration: const InputDecoration(
-              labelText: 'Nama Pelanggan',
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
-            ),
-            onChanged: (value) {
-              controller.customerName.value = value;
-            },
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
+        // // Only show customer name field if no customer is selected
+        // Obx(() => controller.selectedCustomer.value == null
+        //     ? Column(
+        //   children: [
+        //     Container(
+        //       decoration: BoxDecoration(
+        //         color: Colors.white,
+        //         borderRadius: BorderRadius.circular(12),
+        //         border: Border.all(color: Colors.grey.shade300),
+        //       ),
+        //       child: TextField(
+        //         decoration: const InputDecoration(
+        //           labelText: 'Nama Pelanggan (Opsional)',
+        //           border: InputBorder.none,
+        //           contentPadding: EdgeInsets.symmetric(
+        //               horizontal: 16, vertical: 12),
+        //         ),
+        //         onChanged: (value) {
+        //           controller.customerName.value = value;
+        //         },
+        //       ),
+        //     ),
+        //     const SizedBox(height: 12),
+        //   ],
+        // )
+        //     : const SizedBox.shrink()),
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -697,7 +761,9 @@ class TransactionDetailView extends StatelessWidget {
               labelText: 'Catatan Transaksi',
               border: InputBorder.none,
               contentPadding: EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
             maxLines: 3,
             onChanged: (value) {
@@ -705,74 +771,77 @@ class TransactionDetailView extends StatelessWidget {
             },
           ),
         ),
-
-        const SizedBox(height: 24),
-
+        const SizedBox(height: 8),
         // Payment Status Card
-        Obx(() =>
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: controller.canProcessPayment
-                    ? Colors.green.shade50
-                    : Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: controller.canProcessPayment
-                      ? Colors.green.shade300
-                      : Colors.orange.shade300,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
+        Obx(
+          () => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color:
+                  controller.canProcessPayment
+                      ? Colors.green.shade50
+                      : Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color:
                     controller.canProcessPayment
-                        ? Icons.check_circle
-                        : Icons.warning,
-                    color: controller.canProcessPayment
-                        ? Colors.green
-                        : Colors.orange,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        ? Colors.green.shade300
+                        : Colors.orange.shade300,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  controller.canProcessPayment
+                      ? Icons.check_circle
+                      : Icons.warning,
+                  color:
+                      controller.canProcessPayment
+                          ? Colors.green
+                          : Colors.orange,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        controller.canProcessPayment
+                            ? 'Siap untuk diproses'
+                            : 'Pembayaran kurang',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color:
+                              controller.canProcessPayment
+                                  ? Colors.green.shade800
+                                  : Colors.orange.shade800,
+                        ),
+                      ),
+                      if (!controller.canProcessPayment)
                         Text(
-                          controller.canProcessPayment
-                              ? 'Siap untuk diproses'
-                              : 'Pembayaran kurang',
+                          'Kurang: Rp ${controller.formatPrice(controller.cartTotal.value - controller.amountPaid.value)}',
                           style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: controller.canProcessPayment
-                                ? Colors.green.shade800
-                                : Colors.orange.shade800,
+                            fontSize: 12,
+                            color: Colors.orange.shade700,
                           ),
                         ),
-                        if (!controller.canProcessPayment)
-                          Text(
-                            'Kurang: Rp ${controller.formatPrice(controller
-                                .cartTotal.value - controller.amountPaid
-                                .value)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade700,
-                            ),
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            )),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildQuickPaymentButton(String label, double multiplier) {
     return Obx(() {
-      final quickAmount = (controller.cartTotal.value * multiplier).ceilToDouble();
-      final isSelected = (controller.amountPaid.value - quickAmount).abs() < 0.01;
+      final quickAmount =
+          (controller.cartTotal.value * multiplier).ceilToDouble();
+      final isSelected =
+          (controller.amountPaid.value - quickAmount).abs() < 0.01;
 
       return Container(
         width: 100,
@@ -804,7 +873,6 @@ class TransactionDetailView extends StatelessWidget {
       );
     });
   }
-
 
   Widget _buildOrderItem(TransactionItem item) {
     return Padding(
@@ -840,8 +908,7 @@ class TransactionDetailView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${item.quantity} x Rp ${controller.formatPrice(
-                        item.unitPrice)}',
+                    '${item.quantity} x Rp ${controller.formatPrice(item.unitPrice)}',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 ],
@@ -861,11 +928,12 @@ class TransactionDetailView extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderOption(IconData icon,
-      String label, {
-        VoidCallback? onTap,
-        bool hasValue = false,
-      }) {
+  Widget _buildOrderOption(
+    IconData icon,
+    String label, {
+    VoidCallback? onTap,
+    bool hasValue = false,
+  }) {
     return Column(
       children: [
         Container(
@@ -890,9 +958,11 @@ class TransactionDetailView extends StatelessWidget {
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
-                  onTap: onTap ?? () {
-                    Get.snackbar('Info', '$label belum tersedia');
-                  },
+                  onTap:
+                      onTap ??
+                      () {
+                        Get.snackbar('Info', '$label belum tersedia');
+                      },
                   borderRadius: BorderRadius.circular(12),
                   child: Center(
                     child: Icon(
@@ -949,49 +1019,51 @@ class TransactionDetailView extends StatelessWidget {
           ],
         ),
         child: SafeArea(
-          child: Obx(() =>
-              ElevatedButton(
-                onPressed: controller.isProcessingTransaction.value
-                    ? null
-                    : controller.canProcessPayment
-                    ? () => controller.processTransaction()
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: controller.canProcessPayment
-                      ? primaryColor
-                      : Colors.grey,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
+          child: Obx(
+            () => ElevatedButton(
+              onPressed:
+                  controller.isProcessingTransaction.value
+                      ? null
+                      : controller.canProcessPayment
+                      ? () => controller.processTransaction()
+                      : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    controller.canProcessPayment ? primaryColor : Colors.grey,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: controller.isProcessingTransaction.value
-                    ? const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
+                elevation: 0,
+              ),
+              child:
+                  controller.isProcessingTransaction.value
+                      ? const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text('MEMPROSES...'),
+                        ],
+                      )
+                      : const Text(
+                        'BAYAR LUNAS',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 12),
-                    Text('MEMPROSES...'),
-                  ],
-                )
-                    : const Text(
-                  'BAYAR LUNAS',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
-                ),
-              )),
+            ),
+          ),
         ),
       );
     } else {
@@ -1010,36 +1082,39 @@ class TransactionDetailView extends StatelessWidget {
           ],
         ),
         child: SafeArea(
-          child: Obx(() =>
-              ElevatedButton(
-                onPressed: controller.cartItems.isEmpty
-                    ? null
-                    : () {
-                  if (controller.selectedTabIndex.value < 2) {
-                    controller.setSelectedTab(
-                        controller.selectedTabIndex.value + 1);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
+          child: Obx(
+            () => ElevatedButton(
+              onPressed:
+                  controller.cartItems.isEmpty
+                      ? null
+                      : () {
+                        if (controller.selectedTabIndex.value < 2) {
+                          controller.setSelectedTab(
+                            controller.selectedTabIndex.value + 1,
+                          );
+                        }
+                      },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  controller.selectedTabIndex.value == 0
-                      ? 'LANJUT KE RINCIAN'
-                      : 'LANJUT KE PEMBAYARAN',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
-                  ),
+                elevation: 0,
+              ),
+              child: Text(
+                controller.selectedTabIndex.value == 0
+                    ? 'LANJUT KE RINCIAN'
+                    : 'LANJUT KE PEMBAYARAN',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
                 ),
-              )),
+              ),
+            ),
+          ),
         ),
       );
     }
@@ -1067,7 +1142,8 @@ class TransactionDetailView extends StatelessWidget {
   }
 
   double _calculateTaxAmount() {
-    final taxableAmount = controller.cartSubtotal.value -
+    final taxableAmount =
+        controller.cartSubtotal.value -
         _calculateDiscountAmount() +
         controller.serviceFee.value +
         controller.shippingCost.value;
@@ -1082,9 +1158,10 @@ class TransactionDetailView extends StatelessWidget {
   // ===========================
   void _showShippingDialog() {
     final shippingController = TextEditingController(
-      text: controller.shippingCost.value > 0
-          ? controller.shippingCost.value.toString()
-          : '',
+      text:
+          controller.shippingCost.value > 0
+              ? controller.shippingCost.value.toString()
+              : '',
     );
 
     Get.dialog(
@@ -1123,9 +1200,10 @@ class TransactionDetailView extends StatelessWidget {
 
   void _showDiscountDialog() {
     final discountController = TextEditingController(
-      text: controller.discount.value > 0
-          ? controller.discount.value.toString()
-          : '',
+      text:
+          controller.discount.value > 0
+              ? controller.discount.value.toString()
+              : '',
     );
 
     Get.dialog(
@@ -1146,34 +1224,35 @@ class TransactionDetailView extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Nilai Diskon',
                 border: const OutlineInputBorder(),
-                prefixText: controller.discountType.value == 'percentage'
-                    ? ''
-                    : 'Rp ',
-                suffixText: controller.discountType.value == 'percentage'
-                    ? '%'
-                    : '',
+                prefixText:
+                    controller.discountType.value == 'percentage' ? '' : 'Rp ',
+                suffixText:
+                    controller.discountType.value == 'percentage' ? '%' : '',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            Obx(() =>
-                DropdownButtonFormField<String>(
-                  value: controller.discountType.value,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipe Diskon',
-                    border: OutlineInputBorder(),
+            Obx(
+              () => DropdownButtonFormField<String>(
+                value: controller.discountType.value,
+                decoration: const InputDecoration(
+                  labelText: 'Tipe Diskon',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
+                  DropdownMenuItem(
+                    value: 'percentage',
+                    child: Text('Persentase'),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
-                    DropdownMenuItem(
-                        value: 'percentage', child: Text('Persentase')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.discountType.value = value;
-                    }
-                  },
-                )),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.discountType.value = value;
+                  }
+                },
+              ),
+            ),
           ],
         ),
         actions: [
@@ -1193,9 +1272,10 @@ class TransactionDetailView extends StatelessWidget {
 
   void _showServiceDialog() {
     final serviceController = TextEditingController(
-      text: controller.serviceFee.value > 0
-          ? controller.serviceFee.value.toString()
-          : '',
+      text:
+          controller.serviceFee.value > 0
+              ? controller.serviceFee.value.toString()
+              : '',
     );
 
     Get.dialog(
@@ -1255,32 +1335,34 @@ class TransactionDetailView extends StatelessWidget {
               decoration: InputDecoration(
                 labelText: 'Nilai Pajak',
                 border: const OutlineInputBorder(),
-                prefixText: controller.taxType.value == 'percentage'
-                    ? ''
-                    : 'Rp ',
+                prefixText:
+                    controller.taxType.value == 'percentage' ? '' : 'Rp ',
                 suffixText: controller.taxType.value == 'percentage' ? '%' : '',
               ),
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            Obx(() =>
-                DropdownButtonFormField<String>(
-                  value: controller.taxType.value,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipe Pajak',
-                    border: OutlineInputBorder(),
+            Obx(
+              () => DropdownButtonFormField<String>(
+                value: controller.taxType.value,
+                decoration: const InputDecoration(
+                  labelText: 'Tipe Pajak',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
+                  DropdownMenuItem(
+                    value: 'percentage',
+                    child: Text('Persentase'),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'amount', child: Text('Rupiah')),
-                    DropdownMenuItem(
-                        value: 'percentage', child: Text('Persentase')),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      controller.taxType.value = value;
-                    }
-                  },
-                )),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    controller.taxType.value = value;
+                  }
+                },
+              ),
+            ),
           ],
         ),
         actions: [

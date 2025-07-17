@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/controllers/setting_controller.dart';
+import 'package:sadean/src/view/customer/customer_view.dart';
 
 class SettingView extends StatelessWidget {
   final SettingsController controller = Get.put(SettingsController());
@@ -208,6 +209,19 @@ class SettingView extends StatelessWidget {
                   () => controller.showReceiptSettingsDialog(),
             ),
           ]),
+          _buildMenuSection(
+            context,
+            "Master Data",
+            [
+              _buildMenuTile(
+                context,
+                Icons.supervised_user_circle,
+                "Data Pelanggan",
+                "Pengaturan data pelanggan",
+                    () => Get.to(CustomerView()), // <-- Panggil metode baru di sini
+              ),
+            ],
+          ),
           _buildMenuSection(
             context,
             "Manajemen Data",

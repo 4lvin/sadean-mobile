@@ -394,7 +394,7 @@ class TransactionView extends StatelessWidget {
   Widget _buildCartBottomSheet() {
     return DraggableScrollableSheet(
       initialChildSize: 0.5,
-      minChildSize: 0.35,
+      minChildSize: 0.25,
       maxChildSize: 0.9,
       expand: true,
       builder: (context, scrollController) {

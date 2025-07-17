@@ -4,9 +4,11 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 import '../models/category_model.dart';
+import '../models/customer_model.dart';
 import '../models/product_model.dart';
 import '../models/transaction_model.dart';
 import '../service/category_service.dart';
+import '../service/customer_service.dart';
 import '../service/product_service.dart';
 import '../service/transaction_service.dart';
 import '../view/history/receipt_view.dart';
@@ -58,10 +60,18 @@ class TransactionController extends GetxController {
   final TextEditingController searchController = TextEditingController();
   final TextEditingController totalAmount = TextEditingController();
 
+  final CustomerService _customerService = Get.find<CustomerService>();
+
+  // Customer selection
+  final Rx<Customer?> selectedCustomer = Rx<Customer?>(null);
+  final RxList<Customer> customers = <Customer>[].obs;
+  final RxBool showCustomerSelection = false.obs;
+
   @override
   void onInit() {
     super.onInit();
     loadInitialData();
+    loadCustomers();
 
     // Listen to search query changes with debounce
     debounce(searchQuery, _performSearch, time: const Duration(milliseconds: 500));
@@ -303,6 +313,7 @@ class TransactionController extends GetxController {
     changeAmount.value = 0;
     customerName.value = '';
     transactionNotes.value = '';
+    selectedCustomer.value = null;
     showCart.value = false;
     selectedTabIndex.value = 0;
   }
@@ -646,10 +657,10 @@ class TransactionController extends GetxController {
     //   Get.snackbar('Error', 'Jumlah pembayaran tidak mencukupi');
     //   return;
     // }
-    if (amountPaid.value <= 0) {
-      Get.snackbar('Error', 'Masukkan jumlah pembayaran');
-      return;
-    }
+    // if (amountPaid.value <= 0) {
+    //   Get.snackbar('Error', 'Masukkan jumlah pembayaran');
+    //   return;
+    // }
 
     try {
       isProcessingTransaction.value = true;
@@ -683,7 +694,15 @@ class TransactionController extends GetxController {
         customerName: customerName.value.isNotEmpty ? customerName.value : null,
         notes: transactionNotes.value.isNotEmpty ? transactionNotes.value : null,
       );
-
+      if (selectedCustomer.value != null && paymentStatus == 'pending') {
+        final remainingAmount = cartTotal.value - amountPaid.value;
+        await _customerService.addCustomerTransaction(
+          customerId: selectedCustomer.value!.id,
+          type: 'invoice',
+          amount: remainingAmount,
+          notes: 'Transaksi: ${transaction.id}',
+        );
+      }
       // Clear cart after successful transaction
       clearCart();
       loadInitialData();
@@ -864,6 +883,132 @@ class TransactionController extends GetxController {
             child: const Text('Tambah'),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> loadCustomers() async {
+    try {
+      final customerList = await _customerService.getAllCustomers();
+      customers.assignAll(customerList);
+    } catch (e) {
+      print('Error loading customers: $e');
+    }
+  }
+
+  // Add this new method:
+  void selectCustomer(Customer? customer) {
+    selectedCustomer.value = customer;
+    if (customer != null) {
+      customerName.value = customer.name;
+    }
+  }
+
+  // Add this new method:
+  void showCustomerDialog() {
+    Get.dialog(
+      Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: Get.width * 0.9,
+          height: Get.height * 0.6,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Pilih Pelanggan',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Get.back(),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // No Customer Option
+              ListTile(
+                leading: const Icon(Icons.person_off),
+                title: const Text('Tanpa Pelanggan'),
+                subtitle: const Text('Transaksi umum'),
+                onTap: () {
+                  selectCustomer(null);
+                  Get.back();
+                },
+                selected: selectedCustomer.value == null,
+                selectedTileColor: Colors.blue.shade50,
+              ),
+
+              const Divider(),
+
+              // Customer List
+              Expanded(
+                child: Obx(() {
+                  if (customers.isEmpty) {
+                    return const Center(
+                      child: Text('Belum ada pelanggan terdaftar'),
+                    );
+                  }
+
+                  return ListView.builder(
+                    itemCount: customers.length,
+                    itemBuilder: (context, index) {
+                      final customer = customers[index];
+                      final isSelected = selectedCustomer.value?.id == customer.id;
+
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: customer.hasBalance
+                              ? Colors.red.shade100
+                              : Colors.green.shade100,
+                          child: Icon(
+                            Icons.person,
+                            color: customer.hasBalance
+                                ? Colors.red.shade700
+                                : Colors.green.shade700,
+                          ),
+                        ),
+                        title: Text(customer.name),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (customer.phoneNumber != null)
+                              Text(customer.phoneNumber!),
+                            Text(
+                              'Saldo: ${formatPrice(customer.balance)}',
+                              style: TextStyle(
+                                color: customer.hasBalance
+                                    ? Colors.red
+                                    : Colors.green,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          selectCustomer(customer);
+                          Get.back();
+                        },
+                        selected: isSelected,
+                        selectedTileColor: Colors.blue.shade50,
+                      );
+                    },
+                  );
+                }),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:sadean/src/service/category_service.dart';
 import 'package:sadean/src/service/product_service.dart';
 import 'package:sadean/src/service/transaction_service.dart';
+import 'customer_service.dart';
 import 'database_helper.dart';
 import 'income_expense_service.dart';
 
@@ -13,6 +14,7 @@ class AppInitializationService {
     // Initialize services in correct order
     Get.put(CategoryService());
     Get.put(ProductService());
+    Get.put(CustomerService());
     Get.put(TransactionService());
     Get.put<IncomeExpenseService>(IncomeExpenseService(), permanent: true);
 
