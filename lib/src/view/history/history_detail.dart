@@ -489,15 +489,60 @@ class TransactionDetailView extends StatelessWidget {
 
               // Payment Status
               Obx(
-                () => Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Pembayaran'),
-                    Text(
-                      'Rp ${controller.formatPrice(controller.cartTotal.value)}',
-                      style: TextStyle(color: Colors.grey[600]),
+                    () => Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: controller.amountPaid.value >= controller.cartTotal.value
+                        ? Colors.green.shade50
+                        : Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: controller.amountPaid.value >= controller.cartTotal.value
+                          ? Colors.green.shade300
+                          : Colors.orange.shade300,
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        controller.amountPaid.value >= controller.cartTotal.value
+                            ? Icons.check_circle
+                            : Icons.warning,
+                        color: controller.amountPaid.value >= controller.cartTotal.value
+                            ? Colors.green
+                            : Colors.orange,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              controller.amountPaid.value >= controller.cartTotal.value
+                                  ? 'Siap untuk diproses'
+                                  : controller.amountPaid.value > 0
+                                  ? 'Pembayaran kurang'
+                                  : 'Belum ada pembayaran',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: controller.amountPaid.value >= controller.cartTotal.value
+                                    ? Colors.green.shade800
+                                    : Colors.orange.shade800,
+                              ),
+                            ),
+                            if (controller.amountPaid.value < controller.cartTotal.value)
+                              Text(
+                                'Kurang: Rp ${controller.formatPrice(controller.cartTotal.value - controller.amountPaid.value)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
@@ -699,18 +744,10 @@ class TransactionDetailView extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Expanded(
-            //   child: _buildQuickPaymentButton('0%', 0),
-            // ),
-            // const SizedBox(width: 8),
-            // Expanded(
-            //   child: _buildQuickPaymentButton('25%', 0.25),
-            // ),
-            // const SizedBox(width: 8),
-            // Expanded(
-            //   child: _buildQuickPaymentButton('50%', 0.5),
-            // ),
-            // const SizedBox(width: 8),
+            _buildQuickPaymentButton('0%', 0),
+            const SizedBox(width: 8),
+            _buildQuickPaymentButton('50%', 0.5),
+            const SizedBox(width: 8),
             _buildQuickPaymentButton('100%', 1.0),
           ],
         ),
@@ -838,10 +875,10 @@ class TransactionDetailView extends StatelessWidget {
 
   Widget _buildQuickPaymentButton(String label, double multiplier) {
     return Obx(() {
-      final quickAmount =
-          (controller.cartTotal.value * multiplier).ceilToDouble();
-      final isSelected =
-          (controller.amountPaid.value - quickAmount).abs() < 0.01;
+      final quickAmount = multiplier > 0
+          ? (controller.cartTotal.value * multiplier).ceilToDouble()
+          : 0.0; // Untuk 0%
+      final isSelected = (controller.amountPaid.value - quickAmount).abs() < 0.01;
 
       return Container(
         width: 100,
@@ -1055,7 +1092,7 @@ class TransactionDetailView extends StatelessWidget {
                         ],
                       )
                       : const Text(
-                        'BAYAR LUNAS',
+                        'BAYAR',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

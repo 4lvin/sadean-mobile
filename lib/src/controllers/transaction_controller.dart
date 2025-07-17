@@ -349,7 +349,7 @@ class TransactionController extends GetxController {
   }
 
   bool get canProcessPayment {
-    return cartItems.isNotEmpty && amountPaid.value > 0;
+    return cartItems.isNotEmpty;
   }
 
   // Transaction Adjustments Dialog
@@ -704,6 +704,7 @@ class TransactionController extends GetxController {
         );
       }
       // Clear cart after successful transaction
+      totalAmount.clear();
       clearCart();
       loadInitialData();
       _historyController.fetchTransactions();
