@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:flutter_barcode_scanner_plus/flutter_barcode_scanner_plus.dart';
 import '../../config/theme.dart';
 import '../../controllers/product_controller.dart';
 import '../../service/category_service.dart';
+import '../../service/currency_input_formatter.dart';
 
 class AddProductView extends StatelessWidget {
   final ProductController controller = Get.find<ProductController>();
@@ -469,6 +471,10 @@ class AddProductView extends StatelessWidget {
                     hint: '0',
                     prefixText: 'Rp ',
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      CurrencyInputFormatter(),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -480,6 +486,10 @@ class AddProductView extends StatelessWidget {
                     hint: '0',
                     prefixText: 'Rp ',
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      CurrencyInputFormatter(),
+                    ],
                   ),
                 ),
               ],
@@ -492,7 +502,6 @@ class AddProductView extends StatelessWidget {
               if (controller.costPrice.value > 0 && controller.sellingPrice.value > 0) {
                 final profit = controller.calculatedProfitAmount;
                 final margin = controller.calculatedProfitMargin;
-
                 return Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -648,6 +657,7 @@ class AddProductView extends StatelessWidget {
     String? hint,
     String? prefixText,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,6 +680,7 @@ class AddProductView extends StatelessWidget {
             controller: controller,
             enabled: !this.controller.isLoading.value,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             decoration: InputDecoration(
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

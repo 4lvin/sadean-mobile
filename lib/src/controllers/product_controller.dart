@@ -8,6 +8,7 @@ import 'package:sadean/src/controllers/transaction_controller.dart';
 import '../models/category_model.dart';
 import '../models/product_model.dart';
 import '../service/category_service.dart';
+import '../service/currency_input_formatter.dart';
 import '../service/product_service.dart';
 
 class ProductController extends GetxController {
@@ -69,11 +70,11 @@ class ProductController extends GetxController {
 
     // Add listeners to text controllers for real-time updates
     costPriceController.addListener(() {
-      costPrice.value = double.tryParse(costPriceController.text) ?? 0.0;
+      costPrice.value = CurrencyHelper.parseFromFormatted(costPriceController.text) ?? 0.0;
     });
 
     sellingPriceController.addListener(() {
-      sellingPrice.value = double.tryParse(sellingPriceController.text) ?? 0.0;
+      sellingPrice.value = CurrencyHelper.parseFromFormatted(sellingPriceController.text) ?? 0.0;
     });
 
     stockController.addListener(() {
@@ -187,8 +188,8 @@ class ProductController extends GetxController {
         categoryId: selectedCategoryId.value!,
         sku: finalSku,
         barcode: barcodeController.text.trim(),
-        costPrice: double.parse(costPriceController.text),
-        sellingPrice: double.parse(sellingPriceController.text),
+        costPrice: CurrencyHelper.parseFromFormatted(costPriceController.text),
+        sellingPrice: CurrencyHelper.parseFromFormatted(sellingPriceController.text),
         unit: unitController.text.trim(),
         stock: actualStock,
         minStock: actualMinStock,

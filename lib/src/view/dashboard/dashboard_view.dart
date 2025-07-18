@@ -174,7 +174,6 @@ class DashboardView extends StatelessWidget {
                 _buildRevenueBreakdownCard(),
 
                 const SizedBox(height: 24),
-
                 // Top products section
                 const Text(
                   'Produk Terlaku',
@@ -206,8 +205,6 @@ class DashboardView extends StatelessWidget {
                         );
                       },
                     ),
-
-                const SizedBox(height: 24),
 
                 // Top categories section
                 const Text(

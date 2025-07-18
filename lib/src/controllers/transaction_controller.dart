@@ -8,6 +8,7 @@ import '../models/customer_model.dart';
 import '../models/product_model.dart';
 import '../models/transaction_model.dart';
 import '../service/category_service.dart';
+import '../service/currency_input_formatter.dart';
 import '../service/customer_service.dart';
 import '../service/product_service.dart';
 import '../service/transaction_service.dart';
@@ -334,7 +335,7 @@ class TransactionController extends GetxController {
     }
 
     amountPaid.value = quickAmount;
-    totalAmount.text = quickAmount.toStringAsFixed(0);
+    totalAmount.text = CurrencyHelper.formatToDisplay(quickAmount);
     totalAmount.selection = TextSelection.fromPosition(
       TextPosition(offset: totalAmount.text.length),
     );

@@ -52,23 +52,23 @@ class HistoryView extends StatelessWidget {
             onPressed: () => _showFilterOptions(),
           ),
           Obx(
-            () => IconButton(
+                () => IconButton(
               icon:
-                  (selectedTabIndex.value == 0
-                          ? controller.isLoading.value
-                          : incomeExpenseController.isLoading.value)
-                      ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Icon(Icons.refresh, color: Colors.white),
+              (selectedTabIndex.value == 0
+                  ? controller.isLoading.value
+                  : incomeExpenseController.isLoading.value)
+                  ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+                  : const Icon(Icons.refresh, color: Colors.white),
               onPressed:
-                  (selectedTabIndex.value == 0
-                          ? controller.isLoading.value
-                          : incomeExpenseController.isLoading.value)
-                      ? null
-                      : () => _refreshCurrentTab(),
+              (selectedTabIndex.value == 0
+                  ? controller.isLoading.value
+                  : incomeExpenseController.isLoading.value)
+                  ? null
+                  : () => _refreshCurrentTab(),
             ),
           ),
         ],
@@ -81,7 +81,7 @@ class HistoryView extends StatelessWidget {
               borderRadius: BorderRadius.circular(25),
             ),
             child: Obx(
-              () => Row(
+                  () => Row(
                 children: [
                   Expanded(
                     child: _buildTabButton('Transaksi', Icons.receipt_long, 0),
@@ -103,16 +103,6 @@ class HistoryView extends StatelessWidget {
         ),
       ),
       body: Obx(() => _buildTabContent()),
-      // floatingActionButton: Obx(
-      //   () =>
-      //       selectedTabIndex.value == 1
-      //           ? FloatingActionButton(
-      //             onPressed: () => incomeExpenseController.showFormDialog(),
-      //             child: const Icon(Icons.add),
-      //             tooltip: 'Tambah Pendapatan/Pengeluaran',
-      //           )
-      //           : const SizedBox.shrink(),
-      // ),
     );
   }
 
@@ -160,16 +150,16 @@ class HistoryView extends StatelessWidget {
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           boxShadow:
-              isSelected
-                  ? [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.3),
-                      spreadRadius: 1,
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                  : null,
+          isSelected
+              ? [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ]
+              : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -235,7 +225,7 @@ class HistoryView extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Obx(
-                    () => Text(
+                        () => Text(
                       _formatCurrency(totalRevenue.value),
                       style: TextStyle(
                         fontSize: 28,
@@ -295,7 +285,7 @@ class HistoryView extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Obx(
-                          () => Text(
+                              () => Text(
                             _formatCurrency(totalExpenses.value),
                             style: TextStyle(
                               fontSize: 18,
@@ -312,11 +302,11 @@ class HistoryView extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: Obx(
-                  () => Card(
+                      () => Card(
                     color:
-                        netProfit.value >= 0
-                            ? Colors.purple.shade50
-                            : Colors.red.shade50,
+                    netProfit.value >= 0
+                        ? Colors.purple.shade50
+                        : Colors.red.shade50,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -327,9 +317,9 @@ class HistoryView extends StatelessWidget {
                               Icon(
                                 Icons.account_balance_wallet,
                                 color:
-                                    netProfit.value >= 0
-                                        ? Colors.purple
-                                        : Colors.red,
+                                netProfit.value >= 0
+                                    ? Colors.purple
+                                    : Colors.red,
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
@@ -349,9 +339,9 @@ class HistoryView extends StatelessWidget {
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color:
-                                  netProfit.value >= 0
-                                      ? Colors.purple[700]
-                                      : Colors.red[700],
+                              netProfit.value >= 0
+                                  ? Colors.purple[700]
+                                  : Colors.red[700],
                             ),
                           ),
                         ],
@@ -425,13 +415,13 @@ class HistoryView extends StatelessWidget {
                   const SizedBox(height: 16),
                   Obx(() {
                     final profitMargin =
-                        totalRevenue.value > 0
-                            ? (netProfit.value / totalRevenue.value) * 100
-                            : 0.0;
+                    totalRevenue.value > 0
+                        ? (netProfit.value / totalRevenue.value) * 100
+                        : 0.0;
                     final expenseRatio =
-                        totalRevenue.value > 0
-                            ? (totalExpenses.value / totalRevenue.value) * 100
-                            : 0.0;
+                    totalRevenue.value > 0
+                        ? (totalExpenses.value / totalRevenue.value) * 100
+                        : 0.0;
 
                     return Column(
                       children: [
@@ -462,11 +452,11 @@ class HistoryView extends StatelessWidget {
   }
 
   Widget _buildBreakdownRow(
-    String label,
-    double amount,
-    Color color,
-    IconData icon,
-  ) {
+      String label,
+      double amount,
+      Color color,
+      IconData icon,
+      ) {
     return Row(
       children: [
         Icon(icon, color: color, size: 20),
@@ -506,17 +496,17 @@ class HistoryView extends StatelessWidget {
   }
 
   Widget _buildPerformanceIndicator(
-    String label,
-    String percentage,
-    double value,
-    IconData icon,
-  ) {
+      String label,
+      String percentage,
+      double value,
+      IconData icon,
+      ) {
     final color =
-        value >= 70
-            ? Colors.green
-            : value >= 40
-            ? Colors.orange
-            : Colors.red;
+    value >= 70
+        ? Colors.green
+        : value >= 40
+        ? Colors.orange
+        : Colors.red;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -573,16 +563,302 @@ class HistoryView extends StatelessWidget {
 
       return RefreshIndicator(
         onRefresh: () => controller.fetchTransactions(),
-        child: ListView.builder(
-          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 50 ),
-          itemCount: controller.transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = controller.transactions[index];
-            return _buildTransactionCard(transaction);
-          },
-        ),
+        child: _buildGroupedTransactionList(),
       );
     });
+  }
+
+  Widget _buildGroupedTransactionList() {
+    // Group transactions by date
+    Map<String, List<Transaction>> groupedTransactions = {};
+
+    for (var transaction in controller.transactions) {
+      String dateKey = DateFormat('yyyy-MM-dd').format(transaction.date);
+      if (!groupedTransactions.containsKey(dateKey)) {
+        groupedTransactions[dateKey] = [];
+      }
+      groupedTransactions[dateKey]!.add(transaction);
+    }
+
+    // Sort keys (dates) in descending order
+    List<String> sortedDates = groupedTransactions.keys.toList()
+      ..sort((a, b) => b.compareTo(a));
+
+    return ListView.builder(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 50),
+      itemCount: sortedDates.length,
+      itemBuilder: (context, index) {
+        String dateKey = sortedDates[index];
+        List<Transaction> dayTransactions = groupedTransactions[dateKey]!;
+        DateTime date = DateTime.parse(dateKey);
+
+        // Calculate daily totals
+        double dailyTotal = dayTransactions.fold(0, (sum, transaction) => sum + transaction.totalAmount);
+        double dailyProfit = dayTransactions.fold(0, (sum, transaction) => sum + transaction.profit);
+        double dailyPending = dayTransactions
+            .where((t) => t.paymentStatus == 'pending')
+            .fold(0, (sum, transaction) => sum + (transaction.totalAmount - transaction.amountPaid));
+        int pendingCount = dayTransactions.where((t) => t.paymentStatus == 'pending').length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              margin: EdgeInsets.only(bottom: 8, top: index == 0 ? 0 : 16),
+              decoration: BoxDecoration(
+                color: primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: primaryColor.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: primaryColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDateHeader(date),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const Spacer(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${dayTransactions.length} transaksi',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Text(
+                        'Rp ${_formatPrice(dailyTotal)}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                          fontSize: 12,
+                        ),
+                      ),
+                      // Show pending amount if any
+                      if (dailyPending > 0) ...[
+                        Text(
+                          'Hutang: Rp ${_formatPrice(dailyPending)} ($pendingCount)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.orange[700],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Transactions for this date
+            ...dayTransactions.map((transaction) =>
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildSimpleTransactionCard(transaction),
+                )
+            ).toList(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSimpleTransactionCard(Transaction transaction) {
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: InkWell(
+        onTap: () => _showTransactionDetail(transaction),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              // Status Icon with enhanced visual for pending payments
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: transaction.paymentStatus == 'paid'
+                      ? Colors.green.shade100
+                      : Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(6),
+                  border: transaction.paymentStatus == 'pending' &&
+                      transaction.amountPaid < transaction.totalAmount
+                      ? Border.all(color: Colors.orange.shade300, width: 1.5)
+                      : null,
+                ),
+                child: Icon(
+                  transaction.paymentStatus == 'paid'
+                      ? Icons.check_circle
+                      : Icons.pending,
+                  color: transaction.paymentStatus == 'paid'
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
+                  size: 16,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Transaction Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          transaction.id,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          DateFormat('HH:mm').format(transaction.date),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+
+                    if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
+                      Text(
+                        transaction.customerName!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                    ],
+
+                    Row(
+                      children: [
+                        Text(
+                          '${transaction.items.length} item',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const Spacer(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Rp ${_formatPrice(transaction.totalAmount)}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                                fontSize: 14,
+                              ),
+                            ),
+                            // Show remaining payment if pending
+                            if (transaction.paymentStatus == 'pending' &&
+                                transaction.amountPaid < transaction.totalAmount) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                'Kurang: Rp ${_formatPrice(transaction.totalAmount - transaction.amountPaid)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.orange[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // More Actions
+              PopupMenuButton(
+                icon: Icon(Icons.more_vert, size: 16, color: Colors.grey[600]),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    child: const Row(
+                      children: [
+                        Icon(Icons.visibility, size: 18),
+                        SizedBox(width: 8),
+                        Text('Detail', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    onTap: () => _showTransactionDetail(transaction),
+                  ),
+                  PopupMenuItem(
+                    child: const Row(
+                      children: [
+                        Icon(Icons.receipt, size: 18),
+                        SizedBox(width: 8),
+                        Text('Struk', style: TextStyle(fontSize: 13)),
+                      ],
+                    ),
+                    onTap: () => _showReceipt(transaction),
+                  ),
+                  if (transaction.paymentStatus == 'pending')
+                    PopupMenuItem(
+                      child: const Row(
+                        children: [
+                          Icon(Icons.payment, size: 18, color: Colors.green),
+                          SizedBox(width: 8),
+                          Text('Lunasi', style: TextStyle(color: Colors.green, fontSize: 13)),
+                        ],
+                      ),
+                      onTap: () => _showPaymentDialog(transaction),
+                    ),
+                  PopupMenuItem(
+                    child: const Row(
+                      children: [
+                        Icon(Icons.delete, size: 18, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Hapus', style: TextStyle(color: Colors.red, fontSize: 13)),
+                      ],
+                    ),
+                    onTap: () => _confirmDeleteTransaction(transaction),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDateHeader(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateOnly = DateTime(date.year, date.month, date.day);
+
+    if (dateOnly == today) {
+      return 'Hari Ini';
+    } else if (dateOnly == yesterday) {
+      return 'Kemarin';
+    } else {
+      return DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(date);
+    }
   }
 
   Widget _buildIncomeExpenseTab() {
@@ -621,64 +897,6 @@ class HistoryView extends StatelessWidget {
             ),
           ),
 
-          // Balance Card
-          // Container(
-          //   margin: const EdgeInsets.symmetric(horizontal: 16),
-          //   padding: const EdgeInsets.all(16),
-          //   decoration: BoxDecoration(
-          //     color:
-          //         incomeExpenseController.balance.value >= 0
-          //             ? Colors.green.shade50
-          //             : Colors.red.shade50,
-          //     borderRadius: BorderRadius.circular(12),
-          //     border: Border.all(
-          //       color:
-          //           incomeExpenseController.balance.value >= 0
-          //               ? Colors.green.shade200
-          //               : Colors.red.shade200,
-          //     ),
-          //   ),
-          //   child: Row(
-          //     children: [
-          //       Icon(
-          //         incomeExpenseController.balance.value >= 0
-          //             ? Icons.account_balance_wallet
-          //             : Icons.warning,
-          //         color:
-          //             incomeExpenseController.balance.value >= 0
-          //                 ? Colors.green
-          //                 : Colors.red,
-          //       ),
-          //       const SizedBox(width: 12),
-          //       Expanded(
-          //         child: Column(
-          //           crossAxisAlignment: CrossAxisAlignment.start,
-          //           children: [
-          //             Text(
-          //               'Saldo Keuangan',
-          //               style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-          //             ),
-          //             Text(
-          //               _formatCurrency(incomeExpenseController.balance.value),
-          //               style: TextStyle(
-          //                 fontSize: 18,
-          //                 fontWeight: FontWeight.bold,
-          //                 color:
-          //                     incomeExpenseController.balance.value >= 0
-          //                         ? Colors.green
-          //                         : Colors.red,
-          //               ),
-          //             ),
-          //             Text(
-          //               'Pendapatan lain - Pengeluaran bisnis',
-          //               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-          //             ),
-          //           ],
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
           const SizedBox(height: 16),
 
           // Filter tabs for income/expense
@@ -691,7 +909,7 @@ class HistoryView extends StatelessWidget {
                     'Semua',
                     'all',
                     incomeExpenseController.filterType.value,
-                    () => incomeExpenseController.filterType.value = 'all',
+                        () => incomeExpenseController.filterType.value = 'all',
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -700,7 +918,7 @@ class HistoryView extends StatelessWidget {
                     'Pendapatan',
                     'income',
                     incomeExpenseController.filterType.value,
-                    () => incomeExpenseController.filterType.value = 'income',
+                        () => incomeExpenseController.filterType.value = 'income',
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -709,7 +927,7 @@ class HistoryView extends StatelessWidget {
                     'Pengeluaran',
                     'expense',
                     incomeExpenseController.filterType.value,
-                    () => incomeExpenseController.filterType.value = 'expense',
+                        () => incomeExpenseController.filterType.value = 'expense',
                   ),
                 ),
               ],
@@ -769,11 +987,11 @@ class HistoryView extends StatelessWidget {
   }
 
   Widget _buildSummaryCard(
-    String title,
-    double amount,
-    Color color,
-    IconData icon,
-  ) {
+      String title,
+      double amount,
+      Color color,
+      IconData icon,
+      ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -811,11 +1029,11 @@ class HistoryView extends StatelessWidget {
   }
 
   Widget _buildFilterChip(
-    String label,
-    String value,
-    String currentValue,
-    VoidCallback onTap,
-  ) {
+      String label,
+      String value,
+      String currentValue,
+      VoidCallback onTap,
+      ) {
     final isSelected = currentValue == value;
 
     return GestureDetector(
@@ -833,214 +1051,6 @@ class HistoryView extends StatelessWidget {
             color: isSelected ? Colors.white : Colors.grey[700],
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTransactionCard(Transaction transaction) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _showTransactionDetail(transaction),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: transaction.paymentStatus == 'paid'
-                              ? Colors.green.shade100
-                              : Colors.orange.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          transaction.paymentStatus == 'paid'
-                              ? Icons.check_circle
-                              : Icons.pending,
-                          color: transaction.paymentStatus == 'paid'
-                              ? Colors.green.shade700
-                              : Colors.orange.shade700,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            transaction.id,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            transaction.paymentStatus == 'paid'
-                                ? 'LUNAS'
-                                : 'BELUM LUNAS',
-                            style: TextStyle(
-                              color: transaction.paymentStatus == 'paid'
-                                  ? Colors.green[600]
-                                  : Colors.orange[600],
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  PopupMenuButton(
-                    itemBuilder:
-                        (context) => [
-                          PopupMenuItem(
-                            child: const Row(
-                              children: [
-                                Icon(Icons.visibility, size: 20),
-                                SizedBox(width: 8),
-                                Text('Detail'),
-                              ],
-                            ),
-                            onTap: () => _showTransactionDetail(transaction),
-                          ),
-                          PopupMenuItem(
-                            child: const Row(
-                              children: [
-                                Icon(Icons.receipt, size: 20),
-                                SizedBox(width: 8),
-                                Text('Lihat Struk'),
-                              ],
-                            ),
-                            onTap: () => _showReceipt(transaction),
-                          ),
-                          if (transaction.paymentStatus == 'pending')
-                            PopupMenuItem(
-                              child: const Row(
-                                children: [
-                                  Icon(Icons.payment, size: 20, color: Colors.green),
-                                  SizedBox(width: 8),
-                                  Text('Lunasi', style: TextStyle(color: Colors.green)),
-                                ],
-                              ),
-                              onTap: () => _showPaymentDialog(transaction),
-                            ),
-                          PopupMenuItem(
-                            child: const Row(
-                              children: [
-                                Icon(Icons.delete, size: 20, color: Colors.red),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Hapus',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ],
-                            ),
-                            onTap: () => _confirmDeleteTransaction(transaction),
-                          ),
-                        ],
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Icon(Icons.person, size: 16, color: Colors.blue[600]),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        transaction.customerName!,
-                        style: TextStyle(
-                          color: Colors.blue[700],
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-              ],
-              Text(
-                _formatDate(transaction.date),
-                style: TextStyle(color: Colors.grey[600], fontSize: 12),
-              ),
-              // const SizedBox(height: 8),
-              // Row(
-              //   children: [
-              //     Icon(Icons.shopping_cart, size: 16, color: Colors.grey[600]),
-              //     const SizedBox(width: 8),
-              //     Text(
-              //       '${transaction.items.length} item',
-              //       style: TextStyle(color: Colors.grey[600]),
-              //     ),
-              //   ],
-              // ),
-              const SizedBox(height: 4),
-              // Text(
-              //   _getItemsSummary(transaction),
-              //   style: TextStyle(color: Colors.grey[800]),
-              //   maxLines: 1,
-              //   overflow: TextOverflow.ellipsis,
-              // ),
-              // const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(fontWeight: FontWeight.w500),
-                  ),
-                  Text(
-                    'Rp ${_formatPrice(transaction.totalAmount)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.green[700],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              if (transaction.paymentStatus == 'pending') ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.warning, size: 16, color: Colors.orange[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Sisa pembayaran: Rp ${_formatPrice(transaction.totalAmount - transaction.amountPaid)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.orange[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
           ),
         ),
       ),
@@ -1132,30 +1142,30 @@ class HistoryView extends StatelessWidget {
               PopupMenuButton(
                 itemBuilder:
                     (context) => [
-                      PopupMenuItem(
-                        child: const Row(
-                          children: [
-                            Icon(Icons.edit, size: 20),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
-                        onTap:
-                            () => incomeExpenseController.showFormDialog(
-                              record: record,
-                            ),
-                      ),
-                      PopupMenuItem(
-                        child: const Row(
-                          children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Hapus', style: TextStyle(color: Colors.red)),
-                          ],
-                        ),
-                        onTap: () => _confirmDeleteIncomeExpense(record),
-                      ),
-                    ],
+                  PopupMenuItem(
+                    child: const Row(
+                      children: [
+                        Icon(Icons.edit, size: 20),
+                        SizedBox(width: 8),
+                        Text('Edit'),
+                      ],
+                    ),
+                    onTap:
+                        () => incomeExpenseController.showFormDialog(
+                      record: record,
+                    ),
+                  ),
+                  PopupMenuItem(
+                    child: const Row(
+                      children: [
+                        Icon(Icons.delete, size: 20, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Hapus', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                    onTap: () => _confirmDeleteIncomeExpense(record),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1232,7 +1242,7 @@ class HistoryView extends StatelessWidget {
       controller.transactions.assignAll(todayTransactions);
     } else if (selectedTabIndex.value == 1) {
       final todayRecords =
-          await incomeExpenseController.service.getTodayRecords();
+      await incomeExpenseController.service.getTodayRecords();
       incomeExpenseController.allRecords.assignAll(todayRecords);
     } else {
       // Filter both for summary
@@ -1241,7 +1251,7 @@ class HistoryView extends StatelessWidget {
       controller.transactions.assignAll(todayTransactions);
 
       final todayRecords =
-          await incomeExpenseController.service.getTodayRecords();
+      await incomeExpenseController.service.getTodayRecords();
       incomeExpenseController.allRecords.assignAll(todayRecords);
     }
   }
@@ -1277,9 +1287,9 @@ class HistoryView extends StatelessWidget {
           status: 'LUNAS',
           trxCode: 'TRX-${transaction.id}',
           footerNote:
-              setController.receiptFooterNote.value.isNotEmpty
-                  ? setController.receiptFooterNote.value
-                  : "",
+          setController.receiptFooterNote.value.isNotEmpty
+              ? setController.receiptFooterNote.value
+              : "",
         );
       } catch (e) {
         Get.snackbar('Error', e.toString());
@@ -1293,7 +1303,7 @@ class HistoryView extends StatelessWidget {
     Get.defaultDialog(
       title: 'Konfirmasi Hapus',
       middleText:
-          'Hapus transaksi ${transaction.id}?\nStok produk akan dikembalikan.',
+      'Hapus transaksi ${transaction.id}?\nStok produk akan dikembalikan.',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
@@ -1310,7 +1320,7 @@ class HistoryView extends StatelessWidget {
     Get.defaultDialog(
       title: 'Konfirmasi Hapus',
       middleText:
-          'Hapus catatan $type sebesar ${_formatCurrency(record.amount)}?',
+      'Hapus catatan $type sebesar ${_formatCurrency(record.amount)}?',
       textConfirm: 'Hapus',
       textCancel: 'Batal',
       confirmTextColor: Colors.white,
@@ -1326,17 +1336,13 @@ class HistoryView extends StatelessWidget {
     return DateFormat('dd MMM yyyy, HH:mm').format(date);
   }
 
-  String _getItemsSummary(Transaction transaction) {
-    return transaction.items.map((item) => item.productName).join(', ');
-  }
-
   String _formatPrice(double price) {
     return price
         .toStringAsFixed(0)
         .replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
           (Match m) => '${m[1]}.',
-        );
+    );
   }
 
   String _formatCurrency(double amount) {
@@ -1423,16 +1429,16 @@ class HistoryView extends StatelessWidget {
   }
 
   Future<void> _completePayment(
-    Transaction transaction,
-    double additionalPayment,
-  ) async {
+      Transaction transaction,
+      double additionalPayment,
+      ) async {
     try {
       final service = Get.find<TransactionService>();
       final newTotalPaid = transaction.amountPaid + additionalPayment;
       final newStatus =
-          newTotalPaid >= transaction.totalAmount ? 'paid' : 'pending';
+      newTotalPaid >= transaction.totalAmount ? 'paid' : 'pending';
       final newChangeAmount =
-          newStatus == 'paid' ? newTotalPaid - transaction.totalAmount : 0.0;
+      newStatus == 'paid' ? newTotalPaid - transaction.totalAmount : 0.0;
 
       await service.updateTransactionPayment(
         transactionId: transaction.id,

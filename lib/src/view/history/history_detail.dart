@@ -8,6 +8,8 @@ import 'package:sadean/src/config/theme.dart';
 import 'package:sadean/src/controllers/transaction_controller.dart';
 import 'package:sadean/src/models/transaction_model.dart';
 
+import '../../service/currency_input_formatter.dart';
+
 class TransactionDetailView extends StatelessWidget {
   final TransactionController controller = Get.find<TransactionController>();
 
@@ -724,9 +726,12 @@ class TransactionDetailView extends StatelessWidget {
               ),
             ),
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              CurrencyInputFormatter(),
+            ],
             onChanged: (value) {
-              final amount = double.tryParse(value) ?? 0;
+              final amount = CurrencyHelper.parseFromFormatted(value) ?? 0;
               controller.setAmountPaid(amount);
             },
           ),
