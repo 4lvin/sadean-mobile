@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:bluetooth_print_plus/bluetooth_print_plus.dart';
 import 'package:bluetooth_print_plus/src/enum_tool.dart' as bt;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -239,6 +241,90 @@ class ImprovedBluetoothPrintService extends GetxController {
     }
   }
 
+  Future<List<int>?> _convertImageToEscPos(String imagePath, {int maxWidth = 384}) async {
+    try {
+      final File imageFile = File(imagePath);
+      if (!await imageFile.exists()) return null;
+
+      // Load image
+      final Uint8List imageBytes = await imageFile.readAsBytes();
+      final ui.Codec codec = await ui.instantiateImageCodec(imageBytes);
+      final ui.FrameInfo frameInfo = await codec.getNextFrame();
+      final ui.Image image = frameInfo.image;
+
+      // Calculate dimensions to maintain aspect ratio
+      final int originalWidth = image.width;
+      final int originalHeight = image.height;
+
+      double ratio = originalWidth / originalHeight;
+      int targetWidth = maxWidth;
+      int targetHeight = (targetWidth / ratio).round();
+
+      // Ensure width is divisible by 8 for thermal printer
+      targetWidth = (targetWidth / 8).floor() * 8;
+      if (targetWidth < 8) targetWidth = 8;
+
+      // Create a picture recorder to resize the image
+      final ui.PictureRecorder recorder = ui.PictureRecorder();
+      final Canvas canvas = Canvas(recorder);
+
+      // Draw the image scaled to the target size
+      canvas.drawImageRect(
+        image,
+        Rect.fromLTWH(0, 0, originalWidth.toDouble(), originalHeight.toDouble()),
+        Rect.fromLTWH(0, 0, targetWidth.toDouble(), targetHeight.toDouble()),
+        Paint(),
+      );
+
+      // Convert to raster image
+      final ui.Picture picture = recorder.endRecording();
+      final ui.Image resizedImage = await picture.toImage(targetWidth, targetHeight);
+      final ByteData? byteData = await resizedImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+
+      if (byteData == null) return null;
+
+      final Uint8List pixels = byteData.buffer.asUint8List();
+
+      // Convert to monochrome bitmap for thermal printer
+      List<int> bitmap = [];
+
+      // ESC/POS image header
+      bitmap.addAll([0x1D, 0x76, 0x30, 0x00]); // GS v 0
+      bitmap.addAll([targetWidth ~/ 8, 0]); // Width in bytes (LSB, MSB)
+      bitmap.addAll([targetHeight % 256, targetHeight ~/ 256]); // Height (LSB, MSB)
+
+      // Convert pixels to 1-bit bitmap
+      for (int y = 0; y < targetHeight; y++) {
+        for (int x = 0; x < targetWidth; x += 8) {
+          int byte = 0;
+          for (int bit = 0; bit < 8 && (x + bit) < targetWidth; bit++) {
+            int pixelIndex = ((y * targetWidth) + (x + bit)) * 4; // RGBA
+            if (pixelIndex + 3 < pixels.length) {
+              int r = pixels[pixelIndex];
+              int g = pixels[pixelIndex + 1];
+              int b = pixels[pixelIndex + 2];
+              int alpha = pixels[pixelIndex + 3];
+
+              // Convert to grayscale and threshold
+              if (alpha > 128) {
+                int gray = (r * 0.299 + g * 0.587 + b * 0.114).round();
+                if (gray < 128) { // Black pixel
+                  byte |= (1 << (7 - bit));
+                }
+              }
+            }
+          }
+          bitmap.add(byte);
+        }
+      }
+
+      return bitmap;
+    } catch (e) {
+      print('Error converting image to ESC/POS: $e');
+      return null;
+    }
+  }
+
   /// Print transaction receipt
   Future<void> printReceipt({
     required String storeName,
@@ -276,7 +362,23 @@ class ImprovedBluetoothPrintService extends GetxController {
 
       // Initialize printer
       add([0x1B, 0x40]); // ESC @
+      final logoPath = await _storage.read(key: 'store_logo');
+      final logoEnabled = await _storage.read(key: 'print_logo_enabled');
 
+      if (logoEnabled == 'true' && logoPath != null && logoPath.isNotEmpty) {
+        try {
+          final logoCommands = await _convertImageToEscPos(logoPath, maxWidth: 200);
+          if (logoCommands != null) {
+            // Center align for logo
+            add([0x1B, 0x61, 0x01]); // Align Center
+            add(logoCommands);
+            add([0x0A, 0x0A]); // Extra line breaks after logo
+          }
+        } catch (e) {
+          print('Error printing logo: $e');
+          // Continue without logo if there's an error
+        }
+      }
       // --- HEADER ---
       add([0x1B, 0x61, 0x01]); // Align Center
       add([0x1B, 0x21, 0x30]); // Font Size: Double Height & Width

@@ -4,6 +4,8 @@ import 'package:bluetooth_print_plus/bluetooth_print_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sadean/src/routers/constant.dart';
 
 import '../models/transaction_model.dart';
@@ -37,6 +39,11 @@ class SettingsController extends GetxController {
   var storeAddress = "Pandaan, Pasuruan".obs;
   var storePhone = "085736710089".obs;
   var receiptFooterNote = "Terima kasih atas kunjungan Anda".obs;
+
+  var storeLogo = "".obs; // Path to logo image
+  var printLogoEnabled = true.obs; // Enable/disable logo printing
+  var logoWidth = 100.0.obs; // Logo width in thermal printer
+  var logoHeight = 50.0.obs; // Logo height in thermal printer
 
   // Bluetooth print service
   late ImprovedBluetoothPrintService printService;
@@ -119,6 +126,26 @@ class SettingsController extends GetxController {
         receiptFooterNote.value = footerNote;
       }
 
+      final logoPath = await _storage.read(key: 'store_logo');
+      if (logoPath != null) {
+        storeLogo.value = logoPath;
+      }
+
+      final logoEnabled = await _storage.read(key: 'print_logo_enabled');
+      if (logoEnabled != null) {
+        printLogoEnabled.value = logoEnabled == 'true';
+      }
+
+      final logoWidthData = await _storage.read(key: 'logo_width');
+      if (logoWidthData != null) {
+        logoWidth.value = double.tryParse(logoWidthData) ?? 100.0;
+      }
+
+      final logoHeightData = await _storage.read(key: 'logo_height');
+      if (logoHeightData != null) {
+        logoHeight.value = double.tryParse(logoHeightData) ?? 50.0;
+      }
+
       // Load saved printer
       await _loadSavedPrinter();
     } catch (e) {
@@ -194,6 +221,23 @@ class SettingsController extends GetxController {
       await _storage.write(
         key: 'receipt_footer_note',
         value: receiptFooterNote.value,
+      );
+
+      await _storage.write(
+        key: 'store_logo',
+        value: storeLogo.value,
+      );
+      await _storage.write(
+        key: 'print_logo_enabled',
+        value: printLogoEnabled.value.toString(),
+      );
+      await _storage.write(
+        key: 'logo_width',
+        value: logoWidth.value.toString(),
+      );
+      await _storage.write(
+        key: 'logo_height',
+        value: logoHeight.value.toString(),
       );
 
       // Save selected printer
@@ -282,6 +326,89 @@ class SettingsController extends GetxController {
     );
   }
 
+  Future<void> selectStoreLogo() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 500,
+        maxHeight: 500,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        // Save image to app directory
+        final Directory appDir = await getApplicationDocumentsDirectory();
+        final String logoDir = '${appDir.path}/logos';
+
+        // Create logos directory if not exists
+        await Directory(logoDir).create(recursive: true);
+
+        // Generate unique filename
+        final String fileName = 'store_logo_${DateTime.now().millisecondsSinceEpoch}.png';
+        final String savedPath = '$logoDir/$fileName';
+
+        // Copy file
+        await File(image.path).copy(savedPath);
+
+        // Delete old logo if exists
+        if (storeLogo.value.isNotEmpty) {
+          try {
+            await File(storeLogo.value).delete();
+          } catch (e) {
+            print('Error deleting old logo: $e');
+          }
+        }
+
+        // Update logo path
+        storeLogo.value = savedPath;
+        await saveSettings();
+
+        Get.snackbar(
+          'Berhasil',
+          'Logo toko berhasil diperbarui',
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade800,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal memilih logo: $e',
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+    }
+  }
+
+  // Method untuk menghapus logo - TAMBAHAN BARU
+  Future<void> removeStoreLogo() async {
+    try {
+      if (storeLogo.value.isNotEmpty) {
+        // Delete file
+        await File(storeLogo.value).delete();
+
+        // Clear logo path
+        storeLogo.value = '';
+        await saveSettings();
+
+        Get.snackbar(
+          'Berhasil',
+          'Logo toko berhasil dihapus',
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade800,
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal menghapus logo: $e',
+        backgroundColor: Colors.red.shade100,
+        colorText: Colors.red.shade800,
+      );
+    }
+  }
+
   // Printer related methods
   Future<void> scanPrinters() async {
     await printService.startScan();
@@ -349,7 +476,7 @@ class SettingsController extends GetxController {
         paymentMethod: selectedPaymentMethod.value,
         transactionId: trxCode,
         dateTime: transactionDate,
-        footerNote: footerNote
+        footerNote: footerNote,
       );
     } catch (e) {
       print("Print transaction error: $e");
@@ -416,6 +543,122 @@ class SettingsController extends GetxController {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Logo Section - TAMBAHAN BARU
+                Card(
+                  color: Colors.grey.shade50,
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.image, color: Colors.blue, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Logo Toko',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+
+                        // Logo preview
+                        Obx(() => Container(
+                          width: double.infinity,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: storeLogo.value.isNotEmpty
+                              ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              File(storeLogo.value),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.broken_image, color: Colors.grey),
+                                        Text('Logo rusak', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                      ],
+                                    ),
+                                  ),
+                            ),
+                          )
+                              : Container(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.image, color: Colors.grey, size: 40),
+                                Text('Belum ada logo', style: TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        )),
+
+                        SizedBox(height: 12),
+
+                        // Logo controls
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => selectStoreLogo(),
+                                icon: Icon(Icons.photo_library, size: 16),
+                                label: Text('Pilih Logo'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Obx(() => storeLogo.value.isNotEmpty
+                                ? OutlinedButton.icon(
+                              onPressed: () => removeStoreLogo(),
+                              icon: Icon(Icons.delete, size: 16, color: Colors.red),
+                              label: Text('Hapus', style: TextStyle(color: Colors.red)),
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                side: BorderSide(color: Colors.red),
+                              ),
+                            )
+                                : SizedBox.shrink()),
+                          ],
+                        ),
+
+                        SizedBox(height: 12),
+
+                        // Print logo enabled switch
+                        Obx(() => SwitchListTile(
+                          title: Text(
+                            'Cetak Logo di Struk',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                          subtitle: Text(
+                            'Tampilkan logo pada struk thermal',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                          value: printLogoEnabled.value,
+                          onChanged: storeLogo.value.isNotEmpty
+                              ? (value) => printLogoEnabled.value = value
+                              : null,
+                          contentPadding: EdgeInsets.zero,
+                          dense: true,
+                        )),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SizedBox(height: 16),
+
                 TextField(
                   controller: storeNameController,
                   decoration: InputDecoration(

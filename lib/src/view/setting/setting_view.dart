@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bluetooth_print_plus/bluetooth_print_plus.dart' hide Alignment;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -201,6 +203,7 @@ class SettingView extends StatelessWidget {
               }
               return SizedBox.shrink();
             }),
+            // _buildLogoSettingsCard(context),
             _buildMenuTile(
               context,
               Icons.receipt_long,
@@ -265,7 +268,7 @@ class SettingView extends StatelessWidget {
               controller.contactUs,
             ),
           ]),
-          Center(child: Text('V.1.1.2',style: TextStyle(color: Colors.blueGrey),)),
+          Center(child: Text('V.1.1.4',style: TextStyle(color: Colors.blueGrey),)),
           _buildMenuSection(context, "Akun", [
             _buildMenuTile(
               context,
@@ -772,13 +775,224 @@ class SettingView extends StatelessWidget {
     );
   }
 
-  // Widget _buildMenuTile(BuildContext context, IconData icon, String title, String subtitle, VoidCallback onTap, {Color? iconColor}) {
-  //   return ListTile(
-  //     leading: Icon(icon, color: iconColor ?? Theme.of(context).colorScheme.primary),
-  //     title: Text(title),
-  //     subtitle: Text(subtitle),
-  //     trailing: Icon(Icons.chevron_right),
-  //     onTap: onTap,
-  //   );
-  // }
+  Widget _buildLogoSettingsCard(BuildContext context) {
+    bool isTablet = MediaQuery.of(context).size.width > 600;
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: isTablet ? 8 : 16,
+        vertical: 8,
+      ),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.image, color: Colors.blue.shade700, size: isTablet ? 24 : 20),
+              SizedBox(width: 12),
+              Text(
+                'Logo Toko',
+                style: TextStyle(
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+
+          // Logo preview section
+          Obx(() => Row(
+            children: [
+              // Logo preview
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white,
+                ),
+                child: controller.storeLogo.value.isNotEmpty
+                    ? ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    File(controller.storeLogo.value),
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.broken_image, color: Colors.grey, size: 30),
+                  ),
+                )
+                    : Icon(Icons.image, color: Colors.grey, size: 30),
+              ),
+
+              SizedBox(width: 16),
+
+              // Logo info and controls
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controller.storeLogo.value.isNotEmpty
+                          ? 'Logo tersimpan'
+                          : 'Belum ada logo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: controller.storeLogo.value.isNotEmpty
+                            ? Colors.green.shade700
+                            : Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      controller.storeLogo.value.isNotEmpty
+                          ? 'Akan dicetak di struk thermal'
+                          : 'Pilih logo untuk struk',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+
+                    // Action buttons
+                    Row(
+                      children: [
+                        // Select/Change logo button
+                        ElevatedButton.icon(
+                          onPressed: () => controller.selectStoreLogo(),
+                          icon: Icon(
+                            controller.storeLogo.value.isNotEmpty
+                                ? Icons.edit
+                                : Icons.add_photo_alternate,
+                            size: 16,
+                          ),
+                          label: Text(
+                            controller.storeLogo.value.isNotEmpty
+                                ? 'Ubah'
+                                : 'Pilih',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            minimumSize: Size(0, 32),
+                          ),
+                        ),
+
+                        // Remove logo button (only show if logo exists)
+                        if (controller.storeLogo.value.isNotEmpty) ...[
+                          SizedBox(width: 8),
+                          OutlinedButton.icon(
+                            onPressed: () => _confirmRemoveLogo(),
+                            icon: Icon(Icons.delete, size: 16, color: Colors.red),
+                            label: Text(
+                              'Hapus',
+                              style: TextStyle(fontSize: 12, color: Colors.red),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.red),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              minimumSize: Size(0, 32),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )),
+
+          SizedBox(height: 12),
+
+          // Print logo toggle
+          Obx(() => Row(
+            children: [
+              Switch(
+                value: controller.printLogoEnabled.value && controller.storeLogo.value.isNotEmpty,
+                onChanged: controller.storeLogo.value.isNotEmpty
+                    ? (value) {
+                  controller.printLogoEnabled.value = value;
+                  controller.saveSettings();
+                }
+                    : null,
+                activeColor: Colors.blue,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Cetak Logo di Struk',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: controller.storeLogo.value.isNotEmpty
+                            ? Colors.black
+                            : Colors.grey,
+                      ),
+                    ),
+                    Text(
+                      controller.storeLogo.value.isNotEmpty
+                          ? (controller.printLogoEnabled.value
+                          ? 'Logo akan dicetak di struk thermal'
+                          : 'Logo tidak akan dicetak')
+                          : 'Pilih logo terlebih dahulu',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          )),
+        ],
+      ),
+    );
+  }
+
+// Method untuk konfirmasi hapus logo
+  void _confirmRemoveLogo() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange),
+            SizedBox(width: 12),
+            Text('Hapus Logo'),
+          ],
+        ),
+        content: Text('Apakah Anda yakin ingin menghapus logo toko?'),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Get.back();
+              controller.removeStoreLogo();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+  }
 }

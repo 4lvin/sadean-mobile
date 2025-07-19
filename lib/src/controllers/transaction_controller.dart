@@ -849,7 +849,7 @@ class TransactionController extends GetxController {
       Get.snackbar('Error', 'Keranjang kosong');
       return;
     }
-
+    Get.back();
     // Implement cart saving logic
     Get.snackbar('Info', 'Keranjang disimpan');
   }

@@ -72,14 +72,14 @@ class ProductsView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                childAspectRatio: 0.73,
+                childAspectRatio: 0.67,
                 // crossAxisSpacing: 5,
                 mainAxisSpacing: 12,
               ),
               itemCount: controller.products.length,
               itemBuilder: (context, index) {
                 final product = controller.products[index];
-                return _buildProductCard(product, isGrid: true);
+                return _buildProductCard(product,context, isGrid: true);
               },
             )
                 : ListView.builder(
@@ -89,7 +89,7 @@ class ProductsView extends StatelessWidget {
                 final product = controller.products[index];
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8.0),
-                  child: _buildProductCard(product, isGrid: false),
+                  child: _buildProductCard(product,context, isGrid: false),
                 );
               },
             );
@@ -109,7 +109,7 @@ class ProductsView extends StatelessWidget {
     );
   }
 
-  Widget _buildProductCard(product, {bool isGrid = true}) {
+  Widget _buildProductCard(product,BuildContext context, {bool isGrid = true}) {
     final storage = Get.find<ProductService>();
     final imageWidget = product.imageUrl != null
         ? Hero(
@@ -135,7 +135,7 @@ class ProductsView extends StatelessWidget {
           children: [
             // Gambar atas
             Container(
-              height: 70,
+              height: MediaQuery.sizeOf(context).height * 0.1,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
@@ -204,16 +204,19 @@ class ProductsView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Stok: ${product.stock} ${product.unit}',
-              style: TextStyle(
-                fontSize: 12,
-                color: product.stock <= product.minStock
-                    ? Colors.red
-                    : Colors.grey[600],
+            Container(
+              width: 100,
+              child: Text(
+                'Stok: ${product.stock} ${product.unit}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: product.stock <= product.minStock
+                      ? Colors.red
+                      : Colors.grey[600],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
             if (product.stock <= product.minStock)
               Container(

@@ -905,7 +905,6 @@ class TransactionView extends StatelessWidget {
               onPressed: () {
                 Get.back();
                 controller.saveCart();
-                Get.back();
               },
               child: const Text('Simpan'),
             ),

@@ -43,18 +43,18 @@ class TransactionDetailView extends StatelessWidget {
                           color: Colors.white,
                         ),
                       ),
-                      const Spacer(),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.all(8),
-                        child: const Icon(
-                          Icons.receipt_outlined,
-                          color: Colors.white,
-                        ),
-                      ),
+                      // const Spacer(),
+                      // Container(
+                      //   decoration: BoxDecoration(
+                      //     color: Colors.white.withOpacity(0.2),
+                      //     borderRadius: BorderRadius.circular(8),
+                      //   ),
+                      //   padding: const EdgeInsets.all(8),
+                      //   child: const Icon(
+                      //     Icons.receipt_outlined,
+                      //     color: Colors.white,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -1225,6 +1225,10 @@ class TransactionDetailView extends StatelessWidget {
             border: OutlineInputBorder(),
             prefixText: 'Rp ',
           ),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            CurrencyInputFormatter(),
+          ],
           keyboardType: TextInputType.number,
         ),
         actions: [
@@ -1232,7 +1236,7 @@ class TransactionDetailView extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               controller.shippingCost.value =
-                  double.tryParse(shippingController.text) ?? 0;
+                  CurrencyHelper.parseFromFormatted(shippingController.text) ?? 0;
               Get.back();
             },
             child: const Text('Simpan'),

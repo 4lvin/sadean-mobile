@@ -77,197 +77,7 @@ class ReceiptView extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Receipt Card
-                  RepaintBoundary(
-                    key: _receiptKey,
-
-                    child: Container(
-                      width: double.infinity,
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.3),
-                            spreadRadius: 2,
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          // Header - Store Name & Customer Info
-                          Text(
-                            setController.storeName.value,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            setController.storeAddress.value,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          Text(
-                            setController.storePhone.value,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-                          _buildDividerLine(),
-                          const SizedBox(height: 8),
-
-                          if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
-                            Text(
-                              'Pelanggan: ${transaction.customerName}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          // Transaction Date & Time
-                          Text(
-                            'Tanggal: ${_formatDateTime(transaction.date)}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-                          _buildDividerLine(),
-                          const SizedBox(height: 16),
-
-                          // Items Section
-                          ...transaction.items.map((item) => _buildReceiptItem(item)),
-
-                          const SizedBox(height: 8),
-                          _buildDividerLine(),
-                          const SizedBox(height: 12),
-
-                          // Totals Section
-                          _buildTotalRow('Subtotal', transaction.calculatedSubtotal),
-
-                          // Discount (if any)
-                          if (transaction.discount != null && transaction.discount! > 0)
-                            _buildTotalRow('Diskon', -transaction.discount!, isNegative: true),
-
-                          // Service Fee (if any)
-                          if (transaction.serviceFee != null && transaction.serviceFee! > 0)
-                            _buildTotalRow('Biaya Admin', transaction.serviceFee!),
-
-                          // Shipping Cost (if any)
-                          if (transaction.shippingCost != null && transaction.shippingCost! > 0)
-                            _buildTotalRow('Ongkos Kirim', transaction.shippingCost!),
-
-                          // Tax (if any)
-                          if (transaction.tax != null && transaction.tax! > 0)
-                            _buildTotalRow('Pajak', transaction.tax!),
-
-                          const SizedBox(height: 8),
-
-                          // Final Total
-                          _buildTotalRow('Total Akhir', transaction.totalAmount, isBold: true, fontSize: 18),
-
-                          const SizedBox(height: 8),
-                          _buildDividerLine(),
-                          const SizedBox(height: 8),
-
-                          // Payment Information
-                          _buildPaymentSection(),
-
-                          const SizedBox(height: 16),
-
-                          // Status
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor().withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _getStatusColor()),
-                            ),
-                            child: Text(
-                              _getStatusText(),
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: _getStatusColor(),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Payment Method
-                          Text(
-                            _getPaymentMethodText(),
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-
-                          const SizedBox(height: 8),
-
-                          // Transaction ID
-                          Text(
-                            transaction.id,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontFamily: 'monospace',
-                            ),
-                          ),
-
-                          // Date & Time at bottom
-                          Text(
-                            _formatDateTimeBottom(transaction.date),
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-
-                          // Notes (if any)
-                          if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
-                            const SizedBox(height: 12),
-                            _buildDividerLine(),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Catatan:',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              transaction.notes!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+                  _buildReceiptCardWithLogo(),
                 ],
               ),
             ),
@@ -280,6 +90,221 @@ class ReceiptView extends StatelessWidget {
     );
   }
 
+  Widget _buildReceiptCardWithLogo() {
+    return RepaintBoundary(
+      key: _receiptKey,
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 400),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Logo Section - TAMBAHAN BARU
+            Obx(() {
+              if (setController.printLogoEnabled.value &&
+                  setController.storeLogo.value.isNotEmpty) {
+                return Column(
+                  children: [
+                    Container(
+                      height: 80,
+                      child: Image.file(
+                        File(setController.storeLogo.value),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.broken_image, size: 60, color: Colors.grey),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }
+              return const SizedBox.shrink();
+            }),
+
+            // Header - Store Name & Customer Info
+            Text(
+              setController.storeName.value,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Text(
+              setController.storeAddress.value,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
+            ),
+            Text(
+              setController.storePhone.value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+            _buildDividerLine(),
+            const SizedBox(height: 8),
+
+            if (transaction.customerName != null && transaction.customerName!.isNotEmpty) ...[
+              Text(
+                'Pelanggan: ${transaction.customerName}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+
+            // Transaction Date & Time
+            Text(
+              'Tanggal: ${_formatDateTime(transaction.date)}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[700],
+              ),
+            ),
+
+            const SizedBox(height: 8),
+            _buildDividerLine(),
+            const SizedBox(height: 16),
+
+            // Items Section
+            ...transaction.items.map((item) => _buildReceiptItem(item)),
+
+            const SizedBox(height: 8),
+            _buildDividerLine(),
+            const SizedBox(height: 12),
+
+            // Totals Section
+            _buildTotalRow('Subtotal', transaction.calculatedSubtotal),
+
+            // Discount (if any)
+            if (transaction.discount != null && transaction.discount! > 0)
+              _buildTotalRow('Diskon', -transaction.discount!, isNegative: true),
+
+            // Service Fee (if any)
+            if (transaction.serviceFee != null && transaction.serviceFee! > 0)
+              _buildTotalRow('Biaya Admin', transaction.serviceFee!),
+
+            // Shipping Cost (if any)
+            if (transaction.shippingCost != null && transaction.shippingCost! > 0)
+              _buildTotalRow('Ongkos Kirim', transaction.shippingCost!),
+
+            // Tax (if any)
+            if (transaction.tax != null && transaction.tax! > 0)
+              _buildTotalRow('Pajak', transaction.tax!),
+
+            const SizedBox(height: 8),
+
+            // Final Total
+            _buildTotalRow('Total Akhir', transaction.totalAmount, isBold: true, fontSize: 18),
+
+            const SizedBox(height: 8),
+            _buildDividerLine(),
+            const SizedBox(height: 8),
+
+            // Payment Information
+            _buildPaymentSection(),
+
+            const SizedBox(height: 16),
+
+            // Status
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: _getStatusColor().withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _getStatusColor()),
+              ),
+              child: Text(
+                _getStatusText(),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: _getStatusColor(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Payment Method
+            Text(
+              _getPaymentMethodText(),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
+            // Transaction ID
+            Text(
+              transaction.id,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontFamily: 'monospace',
+              ),
+            ),
+
+            // Date & Time at bottom
+            Text(
+              _formatDateTimeBottom(transaction.date),
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+              ),
+            ),
+
+            // Notes (if any)
+            if (transaction.notes != null && transaction.notes!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildDividerLine(),
+              const SizedBox(height: 8),
+              Text(
+                'Catatan:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                transaction.notes!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
   Widget _buildPrinterStatusBar() {
     return Obx(() {
       final service = printService;
